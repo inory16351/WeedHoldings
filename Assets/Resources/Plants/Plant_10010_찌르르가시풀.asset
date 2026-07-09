@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0cb278665a04ab4abdc157fbee415a5, type: 3}
+  m_Name: "Plant_10010_\uCC0C\uB974\uB974\uAC00\uC2DC\uD480"
+  m_EditorClassIdentifier: Assembly-CSharp::WeedHoldings.PlantData
+  plantID: 10010
+  plantName: "\uCC0C\uB974\uB974\uAC00\uC2DC\uD480"
+  description: "\uCC0C\uB974\uB974\uAC00\uC2DC\uD480 \uC528\uC557\uC785\uB2C8\uB2E4.
+    \uBC2D\uC5D0 \uC2EC\uC5B4 \uC218\uD655\uD558\uC5EC \uC57D\uC7AC\uB85C \uD65C\uC6A9\uD560
+    \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  growTimeSeconds: 360
+  requiredHarvestLevel: 20
+  requiredGoldToUnlock: 3000
+  witherTimeSeconds: 180
+  harvestMinCount: 1
+  harvestMaxCount: 1
+  sellGoldValue: 300
+  harvestGroupID: 1003
+  iconSprite: {fileID: 21300000, guid: 5fcc6b5777c4d274ca7d387c7a1a47c3, type: 3}
+  babySprite: {fileID: 21300000, guid: 9db8c44576e098d4b932290a1ade6ac8, type: 3}
+  fullGrowSprite: {fileID: 21300000, guid: 8b4faa36cc5d8ad4f97ad19185d882f7, type: 3}
+  babyPhaseRatio: 0.3
+  growingPhaseRatio: 0.4
+  maturePhaseRatio: 0.3

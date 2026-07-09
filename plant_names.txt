@@ -1,0 +1,47 @@
+﻿아이디
+식물 이름
+성장 시간(초)
+해금 골드
+아이콘 이미지
+식물 이미지(새싹)
+식물 이미지(성장)
+고사 시간
+Plant_Name
+Grow_Time
+Req_Level
+Req_Gold
+Plant_Baby
+Plant_Full_Grow
+Water_Time
+int
+string
+float
+아이디
+int
+업그레이드 레벨
+Upgrade_Level
+필요 시설 업그레이드 레벨
+성장 가산 보너스
+Grow_Bonus
+float
+해금 골드
+해금 되는 밭 칸
+Unlock_Field
+한번에 심기 / 한번에 수확 그룹
+말랑환상버섯
+헤롱헤롱꽃
+아찔핑글덩굴
+몽환비틀이끼
+가물가물방울꽃
+찌르르가시풀
+불끈으라차뿌리
+멍하니방울꽃
+찌릿클로버
+몽실낮잠꽃
+인조 식별자
+Harvest_Group_ID
+한번에 심기 / 한번에 수확 가능 식물 ID
+Plant_ID
+Harvest_Upgrade_ID
+Artificial_ID_Harvest
+Plant_Icon
