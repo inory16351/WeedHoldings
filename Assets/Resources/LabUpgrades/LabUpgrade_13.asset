@@ -15,6 +15,6 @@ MonoBehaviour:
   upgradeID: 20013
   upgradeLevel: 13
   growBonusPercent: 65
-  requiredGold: 6200
-  unlockFieldRow: 3
+  requiredGold: 6000
+  unlockFieldRow: 18
   harvestGroupID: 1002

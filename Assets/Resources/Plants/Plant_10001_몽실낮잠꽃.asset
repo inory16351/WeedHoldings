@@ -19,7 +19,7 @@ MonoBehaviour:
     \uC788\uC2B5\uB2C8\uB2E4."
   growTimeSeconds: 30
   requiredHarvestLevel: 1
-  requiredGoldToUnlock: 100
+  requiredGoldToUnlock: 0
   witherTimeSeconds: 15
   harvestMinCount: 1
   harvestMaxCount: 3
