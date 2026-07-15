@@ -26,28 +26,6 @@ namespace WeedHoldings
         }
 
         /// <summary>
-        /// 가로 스크롤 콘텐츠가 뷰포트보다 좁으면(항목이 적어 꽉 안 채워지면) 왼쪽으로 쏠려 보이지
-        /// 않도록 콘텐츠를 뷰포트 가운데로 옮긴다. 뷰포트보다 넓어서 스크롤이 필요한 경우엔
-        /// 원래 위치(왼쪽부터 시작)로 되돌린다. ComputeFillSlotCount로 빈 칸을 채워도 패딩/스페이싱
-        /// 근사치라 1칸 정도 여백이 남을 수 있는데, 그 여백까지 마저 가운데로 정리한다.
-        /// </summary>
-        public static void CenterHorizontalContentIfUnderfilled(RectTransform content)
-        {
-            if (content == null) return;
-            var viewport = content.parent as RectTransform;
-            if (viewport == null) return;
-
-            LayoutRebuilder.ForceRebuildLayoutImmediate(content);
-
-            float viewportWidth = viewport.rect.width;
-            float contentWidth = content.rect.width;
-
-            content.anchoredPosition = new Vector2(
-                contentWidth < viewportWidth ? (viewportWidth - contentWidth) / 2f : 0f,
-                content.anchoredPosition.y);
-        }
-
-        /// <summary>
         /// 농장/공장/무역소 업그레이드 패널의 Upgrade_Level/Req_Gold 텍스트 박스가 아이콘 이미지와
         /// 겹치지 않도록 아이콘 오른쪽 빈 공간으로 재배치한다. 세 패널 모두 아이콘/텍스트가 서로 다른
         /// 크기의 부모를 가정하고 만든 좌표를 그대로 복사해 써서 텍스트가 아이콘을 침범하고 있었다.

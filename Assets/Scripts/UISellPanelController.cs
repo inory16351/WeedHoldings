@@ -436,8 +436,39 @@ namespace WeedHoldings
             var cellSize = templateRt != null ? templateRt.sizeDelta : new Vector2(140f, 90f);
             var scrollRect = UIScrollListFactory.CreateHorizontalGrid(host, out inventoryContent, cellSize, new Vector2(14f, 14f), InventoryRowCount);
             var scrollRt = scrollRect.GetComponent<RectTransform>();
-            // 위쪽에 이미 있는 "판매할 화물 선택" 라벨과 겹치지 않도록 스크롤 영역 상단을 안쪽으로 당긴다.
-            scrollRt.offsetMax = new Vector2(scrollRt.offsetMax.x, -70f);
+
+            // 예전엔 상하좌우 스트레치 앵커(0,0)-(1,1)에서 위쪽만 라벨 높이(70)만큼 잘라냈는데,
+            // 그러면 스크롤 영역이 항상 패널 아래쪽에 붙어(하단 기준) 배치돼 Inventory_Slot 크기가
+            // 바뀔 때마다 중심이 어긋났다. 대신 Inventory_Slot 중앙을 앵커/피벗 기준점으로 잡고,
+            // 라벨 아래 남는 공간(라벨 제외 높이)의 정중앙에 스크롤 영역을 배치한다.
+            const float labelHeight = 70f;
+            var hostRt = host as RectTransform;
+            float width = hostRt != null ? hostRt.rect.width : 0f;
+            float height = hostRt != null ? Mathf.Max(0f, hostRt.rect.height - labelHeight) : 0f;
+
+            scrollRt.anchorMin = new Vector2(0.5f, 0.5f);
+            scrollRt.anchorMax = new Vector2(0.5f, 0.5f);
+            scrollRt.pivot = new Vector2(0.5f, 0.5f);
+            scrollRt.sizeDelta = new Vector2(width, height);
+            scrollRt.anchoredPosition = new Vector2(0f, -labelHeight / 2f);
+
+            // "판매할 화물 선택" 라벨이 Inventory_Slot 중앙 기준 고정 오프셋으로 박혀 있어서, 패널
+            // 크기가 바뀌면(ResizeLeftColumnPanels) 라벨과 카드 줄의 왼쪽 기준선이 서로 어긋났다.
+            // 라벨을 좌측 상단 고정 마진으로 재배치하고, 카드 그리드의 왼쪽 패딩도 같은 마진으로
+            // 맞춰서 카드가 라벨 바로 아래, 같은 왼쪽 기준선에서 시작하도록 한다.
+            const float labelMargin = 16f;
+            var labelRt = host.Find("Text (TMP)") as RectTransform;
+            if (labelRt != null)
+            {
+                labelRt.anchorMin = new Vector2(0f, 1f);
+                labelRt.anchorMax = new Vector2(0f, 1f);
+                labelRt.pivot = new Vector2(0f, 1f);
+                labelRt.anchoredPosition = new Vector2(labelMargin, -labelMargin);
+            }
+
+            var gridLayout = inventoryContent != null ? inventoryContent.GetComponent<GridLayoutGroup>() : null;
+            if (gridLayout != null)
+                gridLayout.padding = new RectOffset((int)labelMargin, 4, 4, 4);
 
             inventorySlotTemplate.SetParent(inventoryContent, false);
 
@@ -549,9 +580,8 @@ namespace WeedHoldings
             for (int i = inventorySlots.Count; i < targetCount; i++)
                 emptyCargoSlots.Add(CreateEmptyCargoSlot());
 
-            // 빈 칸을 채워도 패딩 근사치 때문에 살짝 왼쪽으로 쏠려 보일 수 있어, 콘텐츠를 뷰포트
-            // 가운데로 정렬한다(항목이 많아 스크롤이 필요하면 자동으로 원래 위치로 되돌아간다).
-            UIScrollListFactory.CenterHorizontalContentIfUnderfilled(inventoryContent);
+            // 카드 줄은 라벨과 같은 왼쪽 기준선(그리드 왼쪽 패딩 = 라벨 마진)에서 시작해야 하므로
+            // 더 이상 뷰포트 가운데로 재정렬하지 않는다(라벨 바로 아래, 왼쪽부터 채워지는 배치 유지).
 
             UIScrollListFactory.ApplyNotoSansFont(this);
         }
