@@ -572,9 +572,17 @@ namespace WeedHoldings
             return potion;
         }
 
+        /// <summary>
+        /// 해금 레벨 오름차순으로 정렬한다(같은 레벨끼리는 potionID로 안정 정렬). 재료 식물 난이도에 맞춰
+        /// requiredUnlockLevel을 재배치하면서 potionID 순서와 실제 해금 순서가 어긋나게 됐다 -
+        /// 목록/해금 패널 모두 이 순서를 "해금되는 순서"로 그대로 가정하고 쓰므로 여기서 정렬 기준을 맞춘다.
+        /// </summary>
         public List<PotionData> GetAllPotions()
         {
-            return potionDict.Values.OrderBy(p => p.potionID).ToList();
+            return potionDict.Values
+                .OrderBy(p => p.requiredUnlockLevel)
+                .ThenBy(p => p.potionID)
+                .ToList();
         }
 
         public bool IsPotionUnlocked(int id)

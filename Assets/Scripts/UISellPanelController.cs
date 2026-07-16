@@ -690,32 +690,24 @@ namespace WeedHoldings
             UIScrollListFactory.ApplyNotoSansFont(this);
         }
 
+        /// <summary>
+        /// 실제 화물 슬롯 템플릿을 복제해서 Plus/Minus/텍스트를 하나하나 지우는 대신, 제조 패널의
+        /// 보유 식물 인벤토리(CreateEmptyInventorySlot)와 똑같이 빈 칸 채우기 전용 오브젝트를 코드로
+        /// 새로 만든다. Inventory_Slot_01 템플릿 구조(Potion_Icon 이름 등)에 기대는 게 하나도 없어서
+        /// 씬 쪽 이름이 바뀌어도 깨지지 않는다.
+        /// </summary>
         Transform CreateEmptyCargoSlot()
         {
-            var clone = Instantiate(inventorySlotTemplate.gameObject, inventoryContent);
-            clone.SetActive(true);
-            clone.name = "Inventory_Slot_Empty";
+            var slotGO = new GameObject("Inventory_Slot_Empty", typeof(RectTransform));
+            slotGO.transform.SetParent(inventoryContent, false);
+            slotGO.layer = 5;
 
-            // 실제 화물이 아니라 빈 칸 채우기용이라 상호작용 로직은 떼어내고 시각적으로만 흐리게 남긴다.
-            var comp = clone.GetComponent<UITradeInventorySlot>();
-            if (comp != null) Destroy(comp);
+            var bg = slotGO.AddComponent<Image>();
+            bg.sprite = CharacterEquipManager.GetEmptySlotIcon();
+            bg.color = bg.sprite != null ? Color.white : new Color(0.16f, 0.16f, 0.2f, 0.4f);
+            bg.preserveAspect = true;
 
-            var icon = clone.transform.Find("Potion_Icon")?.GetComponent<Image>();
-            if (icon != null)
-            {
-                var emptySprite = CharacterEquipManager.GetEmptySlotIcon();
-                icon.sprite = emptySprite;
-                icon.color = emptySprite != null ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 1f, 1f, 0.12f);
-                icon.preserveAspect = true;
-            }
-            clone.transform.Find("Plus")?.gameObject.SetActive(false);
-            clone.transform.Find("Minus")?.gameObject.SetActive(false);
-            var toSellText = clone.transform.Find("To_Sell")?.GetComponent<TMP_Text>();
-            if (toSellText != null) toSellText.text = "";
-            var amountText = clone.transform.Find("Amount")?.GetComponent<TMP_Text>();
-            if (amountText != null) amountText.text = "";
-
-            return clone.transform;
+            return slotGO.transform;
         }
 
         void ClearInventorySlots(bool refreshInfo = true)

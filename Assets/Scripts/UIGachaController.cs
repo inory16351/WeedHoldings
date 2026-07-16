@@ -13,8 +13,9 @@ namespace WeedHoldings
     public class UIGachaController : MonoBehaviour
     {
         const int ResultCount = 10;
-        const int SinglePullCost = 10000;
-        const int MultiPullCost = 90000;
+        // 캐릭터는 최종적으로 골드의 주 소모처가 되도록 뽑기 가격을 3배로 올렸다(느린 장기 진행 목표).
+        const int SinglePullCost = 30000;
+        const int MultiPullCost = 270000;
 
         Transform mainPanel;
         Transform gachaPanelChild;

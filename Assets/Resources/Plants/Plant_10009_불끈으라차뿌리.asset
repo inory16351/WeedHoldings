@@ -17,13 +17,13 @@ MonoBehaviour:
   description: "\uBD88\uB048\uC73C\uB77C\uCC28\uBFCC\uB9AC \uC528\uC557\uC785\uB2C8\uB2E4.
     \uBC2D\uC5D0 \uC2EC\uC5B4 \uC218\uD655\uD558\uC5EC \uC57D\uC7AC\uB85C \uD65C\uC6A9\uD560
     \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  growTimeSeconds: 300
+  growTimeSeconds: 1800
   requiredHarvestLevel: 19
-  requiredGoldToUnlock: 2000
-  witherTimeSeconds: 150
+  requiredGoldToUnlock: 8000
+  witherTimeSeconds: 720
   harvestMinCount: 1
   harvestMaxCount: 1
-  sellGoldValue: 200
+  sellGoldValue: 400
   harvestGroupID: 1003
   iconSprite: {fileID: 21300000, guid: 3de6f6faa3bae17478a1086b86fd5064, type: 3}
   babySprite: {fileID: 21300000, guid: 9db8c44576e098d4b932290a1ade6ac8, type: 3}

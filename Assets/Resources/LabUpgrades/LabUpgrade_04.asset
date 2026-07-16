@@ -15,6 +15,6 @@ MonoBehaviour:
   upgradeID: 20004
   upgradeLevel: 4
   growBonusPercent: 20
-  requiredGold: 1500
+  requiredGold: 6000
   unlockFieldRow: 9
   harvestGroupID: 0

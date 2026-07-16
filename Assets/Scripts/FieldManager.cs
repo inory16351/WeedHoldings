@@ -28,9 +28,9 @@ namespace WeedHoldings
         static readonly Vector2 CellSize = new Vector2(150f, 145f);
         static readonly Vector2 CellSpacing = new Vector2(12f, 12f);
 
-        // 밭 칸 구매 가격 공식(사용자 확정값): 300G + 이미 구매한 칸 수 x 500G
-        const int FieldUnlockBaseCost = 300;
-        const int FieldUnlockCostPerPurchase = 500;
+        // 밭 칸 구매 가격 공식: 1200G + 이미 구매한 칸 수 x 2000G (전체 경제 재조정에 맞춰 기존 대비 4배)
+        const int FieldUnlockBaseCost = 1200;
+        const int FieldUnlockCostPerPurchase = 2000;
 
         void Awake()
         {

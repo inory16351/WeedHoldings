@@ -471,6 +471,11 @@ namespace WeedHoldings
 
             // 원래 있던 Plant_Icon 템플릿 오브젝트는 더 이상 늘려 쓰지 않고 완전히 숨긴다.
             plantIconTemplate.gameObject.SetActive(false);
+
+            // Plant_Icon의 형제로 있던 Slot_Icon(캐릭터/포션 슬롯처럼 배경용으로 추가된 것)도 이 줄은
+            // 완전히 코드로 새로 그리는 방식이라 아예 안 쓰이는데, 숨기지 않아서 흰 배경 이미지가 그대로
+            // 남아 인벤토리 줄 뒤에 비쳐 보였다 - 같이 숨긴다.
+            host.Find("Slot_Icon")?.gameObject.SetActive(false);
         }
 
         public void RefreshInventoryRow()

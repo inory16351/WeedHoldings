@@ -8,7 +8,7 @@ namespace WeedHoldings
         public static GoldManager Instance { get; private set; }
 
         public TextMeshProUGUI goldText;
-        public int gold = 1000;
+        public int gold = 2500;
 
         void Awake()
         {

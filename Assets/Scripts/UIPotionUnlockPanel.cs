@@ -211,7 +211,7 @@ namespace WeedHoldings
         {
             if (DataManager.Instance == null) return;
 
-            // GetAllPotions()는 potionID 오름차순이므로 0번 슬롯 = 가장 먼저 해금되는 포션(기본 무료 해금분)
+            // GetAllPotions()는 해금 레벨 오름차순이므로 0번 슬롯 = 가장 먼저 해금되는 포션(기본 무료 해금분)
             var allPotions = DataManager.Instance.GetAllPotions();
 
             for (int i = 0; i < slotList.Count; i++)

@@ -68,7 +68,7 @@ namespace WeedHoldings
         private float witherTimeRemaining = 0f;
         private float witheredGraceTimeRemaining = 0f;
         private bool isGrowing = false;
-        private const float WITHERED_GRACE_TIME = 10f;
+        private const float WITHERED_GRACE_TIME = 60f; // 다른 시간 값들과 함께 6배로 늘려 체크 주기에 맞춤
 
         public System.Action<FieldPlot, GrowthState> OnGrowthStateChanged;
         public System.Action<FieldPlot, WitherState> OnWitherStateChanged;
