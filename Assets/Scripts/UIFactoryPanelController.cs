@@ -294,7 +294,8 @@ namespace WeedHoldings
             }
             if (timeText != null)
             {
-                timeText.text = $"제작 시간: {potion.potionTimeSeconds:F0}초";
+                float multiplier = FactoryUpgradeManager.Instance != null ? FactoryUpgradeManager.Instance.GetPotionTimeMultiplier() : 1f;
+                timeText.text = $"제작 시간: {potion.potionTimeSeconds / multiplier:F0}초";
                 timeText.color = Color.white;
                 ConfigureAutoSize(timeText, 10f, 16f);
             }

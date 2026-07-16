@@ -54,9 +54,13 @@ namespace WeedHoldings
             EnsureManager<FactoryUpgradeManager>();
             EnsureManager<TradeManager>();
             EnsureManager<SellUpgradeManager>();
+            EnsureManager<GachaManager>();
+            EnsureManager<CharacterEquipManager>();
             SetupLabWidgets();
             SetupFactoryWidgets();
             SetupSellWidgets();
+            SetupGachaWidgets();
+            SetupCharacterWidgets();
 
             panels = new GameObject[] { farmPanel, potionPanel, sellPanel, laboratoryPanel, characterPanel, gachaPanel };
             navButtons = new Button[] { farmNavButton, potionNavButton, sellNavButton, laboratoryNavButton, characterNavButton, gachaNavButton };
@@ -233,6 +237,34 @@ namespace WeedHoldings
         {
             if (sellPanel != null && sellPanel.GetComponent<UISellPanelController>() == null)
                 sellPanel.AddComponent<UISellPanelController>();
+        }
+
+        void SetupGachaWidgets()
+        {
+            if (gachaPanel != null && gachaPanel.GetComponent<UIGachaController>() == null)
+                gachaPanel.AddComponent<UIGachaController>();
+        }
+
+        void SetupCharacterWidgets()
+        {
+            if (characterPanel == null) return;
+
+            foreach (var columnName in new[] { "Farm", "Factory", "Sell" })
+            {
+                var column = characterPanel.transform.Find(columnName);
+                if (column == null) continue;
+
+                for (int i = 1; i <= 3; i++)
+                {
+                    var slot = column.Find($"Charactor_{i:D2}");
+                    if (slot != null && slot.GetComponent<UICharacterEquipSlot>() == null)
+                        slot.gameObject.AddComponent<UICharacterEquipSlot>();
+                }
+            }
+
+            var charEquip = characterPanel.transform.Find("Char_equip");
+            if (charEquip != null && charEquip.GetComponent<UICharacterEquipPopup>() == null)
+                charEquip.gameObject.AddComponent<UICharacterEquipPopup>();
         }
 
         void OnBack()

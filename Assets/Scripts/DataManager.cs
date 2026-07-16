@@ -16,6 +16,7 @@ namespace WeedHoldings
         public string excelFilePath = "../슬기로운재배생활/슬기로운재배생활_재배테이블.xlsx";
         public string potionExcelFilePath = "../슬기로운재배생활/제조테이블.xlsx";
         public string tradeExcelFilePath = "../슬기로운재배생활/무역소 테이블.xlsx";
+        public string characterExcelFilePath = "../슬기로운재배생활/캐릭터테이블.xlsx";
 
         Dictionary<int, PlantData> plantDict = new Dictionary<int, PlantData>();
         Dictionary<int, LabUpgradeData> upgradeDict = new Dictionary<int, LabUpgradeData>();
@@ -33,6 +34,9 @@ namespace WeedHoldings
         Dictionary<int, RegionData> regionDict = new Dictionary<int, RegionData>();
         Dictionary<int, List<(int plantId, float bonusPercent)>> regionBonusGroups = new Dictionary<int, List<(int, float)>>();
         Dictionary<int, SellUpgradeData> sellUpgradeDict = new Dictionary<int, SellUpgradeData>();
+
+        Dictionary<int, CharacterData> characterDict = new Dictionary<int, CharacterData>();
+        HashSet<int> ownedCharacterIDs = new HashSet<int>();
 
         void Awake()
         {
@@ -57,6 +61,7 @@ namespace WeedHoldings
             // 보약(포션) 데이터는 별도 .asset을 만들지 않고 매 실행마다 엑셀에서 직접 읽는다.
             LoadPotionTableFromExcel();
             LoadTradeTableFromExcel();
+            LoadCharacterTableFromExcel();
 #endif
             if (unlockedPotionIDs.Count == 0 && potionDict.Count > 0)
             {
@@ -376,6 +381,63 @@ namespace WeedHoldings
                     sellUpgradeDict.Add(upgrade.upgradeLevel, upgrade);
             }
         }
+
+        /// <summary>
+        /// 캐릭터테이블.xlsx("캐릭터테이블" 시트)를 읽어 characterDict를 채운다.
+        /// 뽑기확률(Draw_Chance) 컬럼은 전체 합이 100이 되도록 설계되어 있어 그대로 가중치로 쓸 수 있다.
+        /// </summary>
+        void LoadCharacterTableFromExcel()
+        {
+            string path = System.IO.Path.GetFullPath(characterExcelFilePath);
+            if (!System.IO.File.Exists(path))
+            {
+                Debug.LogWarning($"[DataManager] 캐릭터테이블 파일을 찾을 수 없습니다: {path}");
+                return;
+            }
+
+            var rows = ExcelParser.ParseSheetByName(path, "캐릭터테이블");
+            if (rows != null) ImportCharacterRows(rows);
+
+            Debug.Log($"[DataManager] 캐릭터테이블 로드 완료: 캐릭터 {characterDict.Count}개");
+        }
+
+        void ImportCharacterRows(List<string[]> rows)
+        {
+            characterDict.Clear();
+            for (int i = 0; i < rows.Count; i++)
+            {
+                var r = rows[i];
+                if (r.Length < 6 || !IsDataRow(r[0])) continue;
+
+                var character = new CharacterData
+                {
+                    characterID = ParseInt(r[0]),
+                    characterName = r[1] ?? "",
+                    grade = r[2] ?? "",
+                    explain = r[3] ?? "",
+                    resourceName = r[4] ?? "",
+                    drawChance = ParseFloat(r[5]),
+                    farmEffectAllNum = r.Length > 6 ? ParseFloat(r[6]) : 0f,
+                    farmEffectTarget = r.Length > 7 ? ParseInt(r[7]) : 0,
+                    farmEffectNum = r.Length > 8 ? ParseInt(r[8]) : 0,
+                    farmEffectChance = r.Length > 9 ? ParseFloat(r[9]) : 0f,
+                    factoryEffectAllNum = r.Length > 10 ? ParseFloat(r[10]) : 0f,
+                    factoryEffectTarget = r.Length > 11 ? ParseInt(r[11]) : 0,
+                    factoryEffectNum = r.Length > 12 ? ParseInt(r[12]) : 0,
+                    factoryEffectChance = r.Length > 13 ? ParseFloat(r[13]) : 0f,
+                    sellEffectAllNum = r.Length > 14 ? ParseFloat(r[14]) : 0f,
+                    sellEffectTarget = r.Length > 15 ? ParseInt(r[15]) : 0,
+                    sellEffectNum = r.Length > 16 ? ParseInt(r[16]) : 0,
+                    sellEffectChance = r.Length > 17 ? ParseFloat(r[17]) : 0f,
+                };
+
+                if (!string.IsNullOrEmpty(character.resourceName))
+                    character.characterIcon = Resources.Load<Sprite>($"Characters/{character.resourceName}");
+
+                if (!characterDict.ContainsKey(character.characterID))
+                    characterDict.Add(character.characterID, character);
+            }
+        }
 #endif
 
         public PlantData GetPlantByID(int id)
@@ -543,6 +605,30 @@ namespace WeedHoldings
         {
             sellUpgradeDict.TryGetValue(level, out var data);
             return data;
+        }
+
+        // ---------- 캐릭터(뽑기) ----------
+
+        public List<CharacterData> GetAllCharacters()
+        {
+            return characterDict.Values.OrderBy(c => c.characterID).ToList();
+        }
+
+        public CharacterData GetCharacterByID(int id)
+        {
+            characterDict.TryGetValue(id, out var character);
+            return character;
+        }
+
+        public bool IsCharacterOwned(int id)
+        {
+            return ownedCharacterIDs.Contains(id);
+        }
+
+        /// <summary>캐릭터를 인벤토리에 추가한다. 이미 보유 중이면 아무 일도 일어나지 않는다(중복 획득 없음).</summary>
+        public void AddCharacterToInventory(int id)
+        {
+            ownedCharacterIDs.Add(id);
         }
     }
 }
