@@ -110,7 +110,6 @@ namespace WeedHoldings
                 infoIcon = infoIconTransform?.GetComponent<Image>();
                 if (infoIcon != null) infoIcon.preserveAspect = true;
                 infoBg = CharacterCardVisuals.MoveBackgroundBehindIcon(infoIconTransform)?.GetComponent<Image>();
-                CharacterCardVisuals.EnsureSlotIconBackground(infoIconTransform);
                 infoName = charInfo.Find("Name")?.GetComponent<TextMeshProUGUI>();
                 infoExplain = charInfo.Find("Explain")?.GetComponent<TextMeshProUGUI>();
                 infoEffect = charInfo.Find("Effect_Info")?.GetComponent<TextMeshProUGUI>();
@@ -327,7 +326,13 @@ namespace WeedHoldings
         {
             selectedCharacter = null;
             if (infoIcon != null) infoIcon.enabled = false;
-            if (infoBg != null) infoBg.enabled = false;
+            // 포션/식물 인벤토리 슬롯과 동일하게: 배경 자리를 아예 끄는 대신 "빈 슬롯" 스프라이트로 바꿔 보여준다.
+            if (infoBg != null)
+            {
+                infoBg.enabled = true;
+                infoBg.sprite = CharacterEquipManager.GetEmptySlotIcon();
+                infoBg.color = Color.white;
+            }
             if (infoRating != null) infoRating.enabled = false;
             if (infoName != null) infoName.text = "";
             if (infoExplain != null) infoExplain.text = "";

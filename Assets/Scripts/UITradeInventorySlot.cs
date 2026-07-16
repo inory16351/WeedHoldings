@@ -20,6 +20,11 @@ namespace WeedHoldings
         public int OwnedAmount { get; private set; }
         public int SelectedAmount { get; private set; }
 
+        void Awake()
+        {
+            if (icon != null) CharacterCardVisuals.FixupSlotIconBackground(icon.transform);
+        }
+
         public void Setup(PotionData potion, int owned, System.Action<UITradeInventorySlot> onPlus, System.Action<UITradeInventorySlot> onMinus)
         {
             PotionID = potion.potionID;

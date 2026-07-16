@@ -31,7 +31,11 @@ namespace WeedHoldings
 
         void Awake()
         {
-            potionIcon = transform.Find("Potion_Icon")?.GetComponent<Image>();
+            var potionIconTransform = transform.Find("Potion_Icon");
+            potionIcon = potionIconTransform?.GetComponent<Image>();
+            if (potionIcon != null) potionIcon.preserveAspect = true;
+            CharacterCardVisuals.FixupSlotIconBackground(potionIconTransform);
+
             potionCrafting = transform.Find("Potion_Crafting")?.GetComponent<Image>();
             potionNameText = transform.Find("Potion_Name")?.GetComponent<TMP_Text>();
             timeText = transform.Find("Time")?.GetComponent<TMP_Text>();

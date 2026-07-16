@@ -100,6 +100,7 @@ namespace WeedHoldings
                 c.a = 0f;
                 plantImage.color = c;
                 plantImage.enabled = true;
+                plantImage.preserveAspect = true;
             }
 
             if (timeText != null)

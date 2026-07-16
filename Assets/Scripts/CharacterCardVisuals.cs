@@ -4,8 +4,9 @@ using UnityEngine.UI;
 namespace WeedHoldings
 {
     /// <summary>
-    /// 캐릭터 아이콘 옆에 배경용 Char_Bg를 둔 슬롯들(Charactor_XX, Char_Slot, Char_Info)에서 공용으로 쓰는 헬퍼.
-    /// 씬마다 Char_Bg가 놓인 위치가 달라서(어떤 곳은 Char_Icon의 자식, 어떤 곳은 Char_Icon과 형제) 두 경우 다 처리한다.
+    /// 아이콘 옆에 배경 이미지를 둔 슬롯들(캐릭터 장착 칸, 제조 트랙, 보약 상세, 무역소 인벤토리 등)에서
+    /// 공용으로 쓰는 헬퍼. 씬마다 배경 오브젝트가 놓인 위치가 달라서(아이콘의 자식인 곳도, 아이콘과
+    /// 형제인 곳도 있다) 두 경우 다 처리한다.
     /// </summary>
     public static class CharacterCardVisuals
     {
@@ -58,26 +59,31 @@ namespace WeedHoldings
         }
 
         /// <summary>
-        /// Char_Icon과 같은 부모 아래에 "Slot_Icon"(빈 슬롯 배경, Resources/Cards/slot)을 준비해서 항상
-        /// Char_Icon 뒤에 깔리도록 한다. 캐릭터 아이콘과 달리 이건 장착/선택 여부와 무관하게 계속 켜져
-        /// 있는 배경 역할이라 - 없으면 새로 만들고, 있으면 그대로 재사용해서 위치/순서만 맞춘다.
+        /// 아이콘 옆의 "Slot_Icon"(빈 슬롯 배경, Resources/Cards/slot)을 아이콘보다 뒤에서 그려지도록
+        /// 정리하고, 스프라이트가 비어 있으면 채운다. 스프라이트가 없는 채로 남아있으면 기본 흰색
+        /// Image로 렌더링되면서(자식이라 아이콘보다 위에 그려져) 실제 아이템 아이콘을 가려버린다.
         /// </summary>
-        public static Image EnsureSlotIconBackground(Transform iconTransform)
+        public static void FixupSlotIconBackground(Transform iconTransform)
         {
-            if (iconTransform == null || iconTransform.parent == null) return null;
+            if (iconTransform == null) return;
 
-            var slotTransform = iconTransform.parent.Find("Slot_Icon");
-            Image image;
+            var slot = iconTransform.Find("Slot_Icon");
+            bool wasChild = slot != null;
+            if (slot == null && iconTransform.parent != null)
+                slot = iconTransform.parent.Find("Slot_Icon");
+            if (slot == null) return;
 
-            if (slotTransform == null)
+            var slotImage = slot.GetComponent<Image>();
+            if (slotImage == null) slotImage = slot.gameObject.AddComponent<Image>();
+
+            int iconIndex = iconTransform.GetSiblingIndex();
+            if (wasChild)
             {
-                var go = new GameObject("Slot_Icon", typeof(RectTransform));
-                go.layer = iconTransform.gameObject.layer;
-                go.transform.SetParent(iconTransform.parent, false);
-                slotTransform = go.transform;
-                image = go.AddComponent<Image>();
+                var slotRect = slot as RectTransform;
+                var iconRect = iconTransform as RectTransform;
+                slot.SetParent(iconTransform.parent, false);
 
-                if (slotTransform is RectTransform slotRect && iconTransform is RectTransform iconRect)
+                if (slotRect != null && iconRect != null)
                 {
                     slotRect.anchorMin = iconRect.anchorMin;
                     slotRect.anchorMax = iconRect.anchorMax;
@@ -85,23 +91,17 @@ namespace WeedHoldings
                     slotRect.anchoredPosition = iconRect.anchoredPosition;
                     slotRect.sizeDelta = iconRect.sizeDelta;
                 }
+                slot.SetSiblingIndex(iconIndex);
             }
-            else
+            else if (slot.GetSiblingIndex() > iconIndex)
             {
-                image = slotTransform.GetComponent<Image>();
-                if (image == null) image = slotTransform.gameObject.AddComponent<Image>();
+                slot.SetSiblingIndex(iconIndex);
             }
 
-            // 캐릭터 아이콘 뒤에서 그려지도록(배경 역할) 형제 순서를 맞춘다.
-            int iconIndex = iconTransform.GetSiblingIndex();
-            if (slotTransform.GetSiblingIndex() > iconIndex)
-                slotTransform.SetSiblingIndex(iconIndex);
-
-            image.sprite = CharacterEquipManager.GetEmptySlotIcon();
-            image.preserveAspect = true;
-            image.enabled = true;
-
-            return image;
+            if (slotImage.sprite == null)
+                slotImage.sprite = CharacterEquipManager.GetEmptySlotIcon();
+            slotImage.preserveAspect = true;
+            slotImage.enabled = true;
         }
     }
 }

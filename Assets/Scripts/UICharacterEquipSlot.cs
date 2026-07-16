@@ -42,7 +42,6 @@ namespace WeedHoldings
             iconImage = iconTransform?.GetComponent<Image>();
             if (iconImage != null) iconImage.preserveAspect = true;
             bgImage = CharacterCardVisuals.MoveBackgroundBehindIcon(iconTransform)?.GetComponent<Image>();
-            CharacterCardVisuals.EnsureSlotIconBackground(iconTransform);
 
             infoText = transform.Find("Info")?.GetComponent<TextMeshProUGUI>();
 
@@ -95,7 +94,14 @@ namespace WeedHoldings
                     iconImage.sprite = null;
                     iconImage.color = new Color(1f, 1f, 1f, 0.15f);
                 }
-                if (bgImage != null) bgImage.enabled = false;
+                // 포션/식물 인벤토리 슬롯과 동일하게: 배경 이미지 자체를 "빈 슬롯"으로 바꿔서 보여준다
+                // (별도 오버레이를 얹는 게 아니라 같은 자리의 스프라이트를 교체).
+                if (bgImage != null)
+                {
+                    bgImage.enabled = true;
+                    bgImage.sprite = CharacterEquipManager.GetEmptySlotIcon();
+                    bgImage.color = Color.white;
+                }
                 if (infoText != null) infoText.text = "미장착\n칸을 눌러 캐릭터를 장착하세요";
                 return;
             }

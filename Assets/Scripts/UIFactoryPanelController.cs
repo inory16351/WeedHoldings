@@ -120,6 +120,12 @@ namespace WeedHoldings
                             break;
                     }
                 }
+
+                if (selectedPotionImage != null)
+                {
+                    selectedPotionImage.preserveAspect = true;
+                    CharacterCardVisuals.FixupSlotIconBackground(selectedPotionImage.transform);
+                }
             }
 
             var resourceSlotParent = transform.Find("Resource_Slot");
@@ -133,8 +139,10 @@ namespace WeedHoldings
                     var slot = resourceSlotParent.Find($"Resource_Slot_{i + 1:D2}");
                     resourceSlotRoots[i] = slot;
                     if (slot == null) continue;
-                    resourceSlotIcons[i] = slot.Find("Plant_Icon")?.GetComponent<Image>();
+                    var plantIconTransform = slot.Find("Plant_Icon");
+                    resourceSlotIcons[i] = plantIconTransform?.GetComponent<Image>();
                     resourceSlotAmounts[i] = slot.Find("Plant_Amount")?.GetComponent<TMP_Text>();
+                    CharacterCardVisuals.FixupSlotIconBackground(plantIconTransform);
                 }
                 reqPlantLabel = resourceSlotParent.Find("Req_Plant")?.GetComponent<TMP_Text>();
             }
@@ -496,7 +504,9 @@ namespace WeedHoldings
             layoutElement.preferredHeight = InventorySlotHeight;
 
             var bg = slotGO.AddComponent<Image>();
-            bg.color = new Color(0.16f, 0.16f, 0.2f, 0.4f);
+            bg.sprite = CharacterEquipManager.GetEmptySlotIcon();
+            bg.color = bg.sprite != null ? Color.white : new Color(0.16f, 0.16f, 0.2f, 0.4f);
+            bg.preserveAspect = true;
 
             return slotGO.transform;
         }
@@ -512,7 +522,9 @@ namespace WeedHoldings
             layoutElement.preferredHeight = InventorySlotHeight;
 
             var bg = slotGO.AddComponent<Image>();
-            bg.color = new Color(0.16f, 0.16f, 0.2f, 0.9f);
+            bg.sprite = CharacterEquipManager.GetEmptySlotIcon();
+            bg.color = bg.sprite != null ? Color.white : new Color(0.16f, 0.16f, 0.2f, 0.9f);
+            bg.preserveAspect = true;
 
             var layout = slotGO.AddComponent<VerticalLayoutGroup>();
             layout.padding = new RectOffset(4, 4, 4, 4);

@@ -45,14 +45,18 @@ namespace WeedHoldings
             }
         }
 
-        /// <summary>밭 전체가 수확 가능 상태일 필요는 없다. 현재 수확 가능한 밭이 하나라도 있으면 된다.</summary>
+        /// <summary>
+        /// 밭 전체가 수확 가능 상태일 필요는 없다. 현재 수확 가능한 밭 중, 심긴 식물의 harvestGroupID가
+        /// 연구소 업그레이드로 해금된 것이 하나라도 있으면 된다(해금 안 된 식물은 한번에 수확 대상 아님).
+        /// </summary>
         bool HasAnyHarvestable()
         {
-            if (CultivationManager.Instance == null) return false;
+            if (CultivationManager.Instance == null || LabUpgradeManager.Instance == null) return false;
 
             foreach (var plot in CultivationManager.Instance.GetAllPlots())
             {
-                if (plot != null && plot.GrowthState == GrowthState.ReadyToHarvest && plot.plantedPlant != null)
+                if (plot != null && plot.GrowthState == GrowthState.ReadyToHarvest && plot.plantedPlant != null
+                    && LabUpgradeManager.Instance.IsHarvestGroupUnlocked(plot.plantedPlant.harvestGroupID))
                     return true;
             }
             return false;
@@ -76,12 +80,14 @@ namespace WeedHoldings
 
         void OnAllHarvestClicked()
         {
-            if (CultivationManager.Instance == null) return;
+            if (CultivationManager.Instance == null || LabUpgradeManager.Instance == null) return;
 
             // 밭 전체가 수확 가능 상태가 될 때까지 기다리지 않고, 지금 수확 가능한 밭만 골라 전부 수확한다.
+            // 단, 심긴 식물의 harvestGroupID가 아직 해금 안 됐으면 이 밭은 건너뛴다.
             foreach (var plot in CultivationManager.Instance.GetAllPlots())
             {
-                if (plot != null && plot.GrowthState == GrowthState.ReadyToHarvest && plot.plantedPlant != null)
+                if (plot != null && plot.GrowthState == GrowthState.ReadyToHarvest && plot.plantedPlant != null
+                    && LabUpgradeManager.Instance.IsHarvestGroupUnlocked(plot.plantedPlant.harvestGroupID))
                     plot.Harvest();
             }
         }

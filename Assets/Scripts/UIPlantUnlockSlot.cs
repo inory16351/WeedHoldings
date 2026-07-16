@@ -41,6 +41,7 @@ namespace WeedHoldings
             if (icon != null)
             {
                 icon.sprite = plant.iconSprite;
+                icon.preserveAspect = true;
                 icon.color = unlocked ? Color.white : new Color(0.03f, 0.03f, 0.03f);
             }
 
