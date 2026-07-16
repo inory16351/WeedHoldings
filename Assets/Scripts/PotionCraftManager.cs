@@ -117,7 +117,8 @@ namespace WeedHoldings
                 DataManager.Instance.RemovePlantFromInventory(plantId, amount);
             }
 
-            float timeMultiplier = FactoryUpgradeManager.Instance != null ? FactoryUpgradeManager.Instance.GetPotionTimeMultiplier() : 1f;
+            int primaryPlantId = DataManager.Instance.GetPotionPrimaryMaterialPlantID(potion.potionID);
+            float timeMultiplier = FactoryUpgradeManager.Instance != null ? FactoryUpgradeManager.Instance.GetPotionTimeMultiplier(primaryPlantId) : 1f;
             float actualTime = potion.potionTimeSeconds / timeMultiplier;
 
             var track = tracks[trackIndex];

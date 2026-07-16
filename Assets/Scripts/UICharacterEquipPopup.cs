@@ -184,11 +184,16 @@ namespace WeedHoldings
             onEquipped = onEquippedCallback;
             selectedCharacter = null;
 
+            // 팝업 자신이 비활성 상태일 때 인벤토리 슬롯을 Instantiate+SetActive(true)하면, 계층 전체가
+            // 아직 비활성이라 클론의 Awake()가 지연된다. 그 상태에서 Setup()이 먼저 실행되고 나중에
+            // 팝업이 켜지면서 뒤늦게 Awake가 실행되면 button.interactable이 다시 true로 덮어써져서
+            // "회색으로 보이지만 여전히 선택 가능한" 버그가 생겼다. 팝업을 먼저 켜서 계층을 활성화한
+            // 뒤 슬롯을 채워야 Awake -> Setup 순서가 보장된다.
+            gameObject.SetActive(true);
+
             EnsureInventoryGrid();
             PopulateInventory();
             ClearInfo();
-
-            gameObject.SetActive(true);
 
             if (backButtonObject != null)
                 backButtonObject.gameObject.SetActive(true);
@@ -260,7 +265,9 @@ namespace WeedHoldings
 
                     var slot = clone.GetComponent<UICharacterInventorySlot>();
                     if (slot == null) slot = clone.AddComponent<UICharacterInventorySlot>();
-                    slot.Setup(character, OnCharacterSelected);
+                    bool equippedElsewhere = CharacterEquipManager.Instance != null
+                        && CharacterEquipManager.Instance.IsCharacterEquippedElsewhere(character.characterID, pendingCategory, pendingSlotIndex);
+                    slot.Setup(character, equippedElsewhere, OnCharacterSelected);
 
                     spawnedSlots.Add(slot);
                 }
@@ -344,6 +351,14 @@ namespace WeedHoldings
             if (selectedCharacter == null || CharacterEquipManager.Instance == null)
             {
                 Close();
+                return;
+            }
+
+            // 인벤토리 그리드에서 선택 자체가 막혀 있어 정상 경로로는 절대 일어나지 않지만, 안전장치로
+            // 커밋 시점에도 한 번 더 확인한다 - 이미 다른 슬롯에 있는 캐릭터는 여기서 장착을 거부한다.
+            if (CharacterEquipManager.Instance.IsCharacterEquippedElsewhere(selectedCharacter.characterID, pendingCategory, pendingSlotIndex))
+            {
+                Debug.LogWarning($"[CharEquip] {selectedCharacter.characterName}은(는) 이미 다른 슬롯에 장착돼 있어 여기 장착을 거부함");
                 return;
             }
 

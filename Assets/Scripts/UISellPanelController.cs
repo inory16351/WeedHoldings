@@ -34,6 +34,10 @@ namespace WeedHoldings
         readonly List<UITradeInventorySlot> inventorySlots = new List<UITradeInventorySlot>();
         readonly List<Transform> emptyCargoSlots = new List<Transform>();
 
+        // 배/지역을 새로 고를 때마다 Inventory_Slot이 통째로 재생성되는데, 그때마다 이미 골라둔
+        // 판매 수량이 0으로 초기화되지 않도록 potionID 기준으로 선택 수량을 별도 보관해둔다.
+        readonly Dictionary<int, int> pendingSellAmounts = new Dictionary<int, int>();
+
         // Sell_Panel
         Button sellButton;
         TMP_Text sellButtonText;
@@ -59,6 +63,14 @@ namespace WeedHoldings
             ResizeLeftColumnPanels();
             BindShipButtons();
             BindRegionButtons();
+
+            // ResizeLeftColumnPanels()가 방금 바꾼 anchor/sizeDelta가 실제 반영된 rect를 곧바로
+            // 읽어야 하는데(BuildInventoryScroll/RefreshInventorySlots의 뷰포트 폭 계산),
+            // SellPanel이 이번 프레임에 막 활성화된 상태라 유니티 레이아웃 재계산이 아직 안 돌아서
+            // rect.width가 0으로 읽혀 "빈 슬롯 채우기(ComputeFillSlotCount)"가 0개로 계산되던 문제가 있었다.
+            // 강제로 캔버스 레이아웃을 즉시 갱신해서 이후 계산이 정확한 크기를 읽도록 한다.
+            Canvas.ForceUpdateCanvases();
+
             BuildInventoryScroll();
 
             if (sellButton != null)
@@ -77,6 +89,9 @@ namespace WeedHoldings
             selectedShipIndex = -1;
             selectedRegionId = -1;
             SetRegionPanelInteractable(false);
+
+            // Awake()와 같은 이유 - 패널이 막 켜진 시점이라 뷰포트 rect가 아직 갱신 전일 수 있다.
+            Canvas.ForceUpdateCanvases();
             RefreshInventorySlots();
             RefreshSellInfo();
             ResetTimeDisplay();
@@ -170,6 +185,20 @@ namespace WeedHoldings
                 ConfigureAutoSize(goldText, 10f, 16f);
                 ConfigureAutoSize(goldAmountText, 10f, 16f);
                 ConfigureAutoSize(sellInfo.Find("Text (TMP)")?.GetComponent<TMP_Text>(), 12f, 22f);
+
+                var goldIcon = sellInfo.Find("Gold")?.GetComponent<Image>();
+                if (goldIcon != null)
+                {
+                    goldIcon.sprite = Resources.Load<Sprite>("Gold");
+                    goldIcon.preserveAspect = true;
+                }
+
+                var luggageIcon = sellInfo.Find("Luggage")?.GetComponent<Image>();
+                if (luggageIcon != null)
+                {
+                    luggageIcon.sprite = Resources.Load<Sprite>("Luggage");
+                    luggageIcon.preserveAspect = true;
+                }
             }
         }
 
@@ -340,6 +369,17 @@ namespace WeedHoldings
             }
         }
 
+        // 무역소 테이블.xlsx "지역" 시트의 Region_ID(42001~42005) 기준 - 리소스/기타 리소스 2에 있던
+        // 지역 배경 이미지 파일명과 1:1 매칭(42001=섬, 42002=극지방, 42003=사막, 42004=초원, 42005=황실).
+        static readonly Dictionary<int, string> RegionImageNames = new Dictionary<int, string>
+        {
+            { 42001, "Island" },
+            { 42002, "Polar" },
+            { 42003, "Desert" },
+            { 42004, "Grassland" },
+            { 42005, "Royal" },
+        };
+
         // ---------- 지역(Region_Panel) ----------
         void BindRegionButtons()
         {
@@ -359,6 +399,19 @@ namespace WeedHoldings
                 int capturedIndex = i;
                 regionButtons[i].onClick.RemoveAllListeners();
                 regionButtons[i].onClick.AddListener(() => OnRegionClicked(capturedIndex));
+
+                // 지역 배경 이미지는 선택/해금 상태에 따라 매 프레임 색만 덧입혀지므로(RefreshRegionButtons의
+                // SetSlotColor) 스프라이트 자체는 여기서 한 번만 넣어주면 된다. 버튼 크기(세로로 긴 직사각형)에
+                // 맞춰 늘리면 정사각형 원본 이미지가 찌그러지므로 preserveAspect로 비율을 유지한다.
+                var regionImage = regionRoots[i]?.GetComponent<Image>();
+                if (regionImage != null && RegionImageNames.TryGetValue(regions[i].regionID, out var imageName))
+                {
+                    // 버튼이 기본 유니티 UISprite(Sliced 타입)로 되어 있어서, 타입을 Simple로 바꾸지 않으면
+                    // 정사각형 배경 사진이 9-슬라이스로 이상하게 늘어난다.
+                    regionImage.sprite = Resources.Load<Sprite>($"Regions/{imageName}");
+                    regionImage.type = Image.Type.Simple;
+                    regionImage.preserveAspect = true;
+                }
             }
         }
 
@@ -407,9 +460,11 @@ namespace WeedHoldings
                 if (regionButtons[i] != null)
                     regionButtons[i].interactable = unlocked;
 
-                Color bg = regionId == selectedRegionId ? new Color(0.25f, 0.45f, 0.85f, 0.9f)
-                    : (unlocked ? new Color(0.18f, 0.18f, 0.22f, 0.9f) : new Color(0.12f, 0.12f, 0.14f, 0.9f));
+                // 해금된 지역은 배경 사진이 항상 선명하게(흰색, 틴트 없음) 보이고, 선택 여부는 파란
+                // 테두리로만 표시한다. 잠긴 지역만 기존처럼 어둡게 틴트해서 실루엣으로 보여준다.
+                Color bg = unlocked ? Color.white : new Color(0.12f, 0.12f, 0.14f, 0.9f);
                 SetSlotColor(regionRoots[i], bg);
+                SetSlotSelectedOutline(regionRoots[i], unlocked && regionId == selectedRegionId);
             }
         }
 
@@ -418,6 +473,23 @@ namespace WeedHoldings
             if (root == null) return;
             var img = root.GetComponent<Image>();
             if (img != null) img.color = color;
+        }
+
+        static readonly Color SelectedOutlineColor = new Color(0.2f, 0.55f, 1f, 1f);
+
+        /// <summary>선택 상태를 색 틴트 대신 파란 테두리(Outline)로 표시한다.</summary>
+        static void SetSlotSelectedOutline(Transform root, bool selected)
+        {
+            if (root == null) return;
+            var outline = root.GetComponent<Outline>();
+            if (outline == null)
+            {
+                outline = root.gameObject.AddComponent<Outline>();
+                outline.effectColor = SelectedOutlineColor;
+                outline.effectDistance = new Vector2(4f, 4f);
+                outline.useGraphicAlpha = false;
+            }
+            outline.enabled = selected;
         }
 
         const int InventoryRowCount = 2;
@@ -522,9 +594,12 @@ namespace WeedHoldings
             le.preferredHeight = height;
         }
 
+        static Sprite cachedPlusSprite;
+        static Sprite cachedMinusSprite;
+
         static void BindSlotComponent(UITradeInventorySlot slot, Transform root)
         {
-            slot.icon = root.Find("Image (3)")?.GetComponent<Image>();
+            slot.icon = root.Find("Potion_Icon")?.GetComponent<Image>();
             slot.plusButton = root.Find("Plus")?.GetComponent<Button>();
             slot.minusButton = root.Find("Minus")?.GetComponent<Button>();
             slot.toSellText = root.Find("To_Sell")?.GetComponent<TMP_Text>();
@@ -537,6 +612,28 @@ namespace WeedHoldings
             var minusText = slot.minusButton != null ? slot.minusButton.GetComponentInChildren<TMP_Text>() : null;
             ConfigureAutoSize(plusText, 10f, 18f);
             ConfigureAutoSize(minusText, 10f, 18f);
+
+            ApplyButtonIcon(slot.plusButton, ref cachedPlusSprite, "Plus", plusText);
+            ApplyButtonIcon(slot.minusButton, ref cachedMinusSprite, "Minus", minusText);
+        }
+
+        /// <summary>
+        /// Plus/Minus 버튼이 기본 유니티 UI 스프라이트 + "+"/"-" 텍스트로만 되어 있어서, 리소스의
+        /// 실제 아이콘 이미지로 교체한다. 아이콘 자체에 기호가 그려져 있으므로 중복되지 않게 텍스트는 숨긴다.
+        /// </summary>
+        static void ApplyButtonIcon(Button button, ref Sprite cache, string resourceName, TMP_Text label)
+        {
+            if (button == null) return;
+            if (cache == null) cache = Resources.Load<Sprite>(resourceName);
+            if (cache == null) return;
+
+            var image = button.GetComponent<Image>();
+            if (image == null) return;
+
+            image.sprite = cache;
+            image.type = Image.Type.Simple;
+            image.preserveAspect = true;
+            if (label != null) label.gameObject.SetActive(false);
         }
 
         /// <summary>
@@ -569,11 +666,18 @@ namespace WeedHoldings
                 BindSlotComponent(slot, clone.transform);
                 slot.Setup(potion, owned, OnSlotPlusClicked, OnSlotMinusClicked);
 
+                if (pendingSellAmounts.TryGetValue(potion.potionID, out int savedAmount) && savedAmount > 0)
+                    slot.SetSelectedAmount(savedAmount);
+
                 inventorySlots.Add(slot);
             }
 
             // 보유 화물이 적어 줄이 휑해 보이지 않도록, 패널을 스크롤 없이 채울 수 있는 만큼 빈 칸을 더 넣는다.
             // (2행 그리드이므로 한 열에 카드가 2장씩 들어간다.)
+            // 뷰포트(inventoryContent.parent)가 이 프레임에 막 생성/활성화됐으면 rect.width가 아직 0으로
+            // 읽혀 ComputeFillSlotCount가 0을 반환 - 그러면 보유 포션이 하나도 없을 때 빈 슬롯이 하나도
+            // 안 채워져서 화면이 통째로 비어 보였다. 계산 직전에 강제로 레이아웃을 갱신해 정확한 폭을 읽는다.
+            Canvas.ForceUpdateCanvases();
             var templateRt = inventorySlotTemplate as RectTransform;
             float cardWidth = templateRt != null ? templateRt.sizeDelta.x : 0f;
             int targetCount = UIScrollListFactory.ComputeFillSlotCount(inventoryContent, cardWidth, 14f) * InventoryRowCount;
@@ -596,11 +700,13 @@ namespace WeedHoldings
             var comp = clone.GetComponent<UITradeInventorySlot>();
             if (comp != null) Destroy(comp);
 
-            var icon = clone.transform.Find("Image (3)")?.GetComponent<Image>();
+            var icon = clone.transform.Find("Potion_Icon")?.GetComponent<Image>();
             if (icon != null)
             {
-                icon.sprite = null;
-                icon.color = new Color(1f, 1f, 1f, 0.12f);
+                var emptySprite = CharacterEquipManager.GetEmptySlotIcon();
+                icon.sprite = emptySprite;
+                icon.color = emptySprite != null ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 1f, 1f, 0.12f);
+                icon.preserveAspect = true;
             }
             clone.transform.Find("Plus")?.gameObject.SetActive(false);
             clone.transform.Find("Minus")?.gameObject.SetActive(false);
@@ -635,13 +741,20 @@ namespace WeedHoldings
             if (GetTotalSelectedAmount() >= capacity) return;
 
             if (slot.TryIncrease())
+            {
+                pendingSellAmounts[slot.PotionID] = slot.SelectedAmount;
                 RefreshSellInfo();
+            }
         }
 
         void OnSlotMinusClicked(UITradeInventorySlot slot)
         {
             if (slot.TryDecrease())
+            {
+                if (slot.SelectedAmount > 0) pendingSellAmounts[slot.PotionID] = slot.SelectedAmount;
+                else pendingSellAmounts.Remove(slot.PotionID);
                 RefreshSellInfo();
+            }
         }
 
         int GetTotalSelectedAmount()
@@ -679,20 +792,29 @@ namespace WeedHoldings
                 sellButton.interactable = selectedShipIndex >= 0 && selectedRegionId > 0 && totalAmount > 0;
         }
 
-        void OnSellClicked()
+        List<(int potionId, int amount)> BuildCargoFromSelection()
         {
-            if (selectedShipIndex < 0 || selectedRegionId <= 0 || TradeManager.Instance == null) return;
-
             var cargo = new List<(int potionId, int amount)>();
             foreach (var slot in inventorySlots)
             {
                 if (slot.SelectedAmount > 0)
                     cargo.Add((slot.PotionID, slot.SelectedAmount));
             }
+            return cargo;
+        }
+
+        void OnSellClicked()
+        {
+            if (selectedShipIndex < 0 || selectedRegionId <= 0 || TradeManager.Instance == null) return;
+
+            var cargo = BuildCargoFromSelection();
             if (cargo.Count == 0) return;
 
             bool started = TradeManager.Instance.StartVoyage(selectedShipIndex, selectedRegionId, cargo);
             if (!started) return;
+
+            foreach (var (potionId, _) in cargo)
+                pendingSellAmounts.Remove(potionId);
 
             selectedShipIndex = -1;
             selectedRegionId = -1;
@@ -724,13 +846,20 @@ namespace WeedHoldings
                 }
             }
 
-            if (selectedRegionId > 0)
+            if (selectedRegionId > 0 && TradeManager.Instance != null)
             {
                 var region = DataManager.Instance?.GetRegionByID(selectedRegionId);
                 if (region != null)
                 {
-                    int minutes = Mathf.FloorToInt(region.sellTimeSeconds / 60f);
-                    int seconds = Mathf.FloorToInt(region.sellTimeSeconds % 60f);
+                    // 화물을 아직 안 골랐어도 지역 기본 시간을, 골랐으면 캐릭터 보너스가 반영된
+                    // 실제 예상 시간을 보여준다(연구소/공장 미리보기와 동일한 패턴).
+                    var cargo = BuildCargoFromSelection();
+                    float previewSeconds = cargo.Count > 0
+                        ? TradeManager.Instance.GetVoyageTimeSeconds(cargo, selectedRegionId)
+                        : region.sellTimeSeconds;
+
+                    int minutes = Mathf.FloorToInt(previewSeconds / 60f);
+                    int seconds = Mathf.FloorToInt(previewSeconds % 60f);
                     timeText.text = $"예상 {minutes:D2}:{seconds:D2}";
                     return;
                 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace WeedHoldings
@@ -103,6 +104,28 @@ namespace WeedHoldings
             return Mathf.RoundToInt(total);
         }
 
+        /// <summary>
+        /// 이 화물을 싣고 출항했을 때 실제 걸리는 항해 시간(초). 무역소에 장착된 캐릭터 보너스가
+        /// 반영된다 - 전체효과는 항상, 대상 한정 보너스는 화물 중 그 캐릭터의 대상 식물로 만든
+        /// 보약이 하나라도 있으면 추가로 적용된다.
+        /// </summary>
+        public float GetVoyageTimeSeconds(List<(int potionId, int amount)> cargo, int regionId)
+        {
+            var region = DataManager.Instance != null ? DataManager.Instance.GetRegionByID(regionId) : null;
+            if (region == null) return 0f;
+
+            var cargoPlantIds = cargo
+                .Select(c => DataManager.Instance.GetPotionPrimaryMaterialPlantID(c.potionId))
+                .Distinct()
+                .ToList();
+
+            float speedMultiplier = SellUpgradeManager.Instance != null
+                ? SellUpgradeManager.Instance.GetSellSpeedMultiplier(cargoPlantIds)
+                : 1f;
+
+            return region.sellTimeSeconds / speedMultiplier;
+        }
+
         /// <summary>선택한 트랙에 화물을 싣고 출항시킨다. 재고를 즉시 차감하고 골드는 도착 시 지급한다.</summary>
         public bool StartVoyage(int shipIndex, int regionId, List<(int potionId, int amount)> cargo)
         {
@@ -121,16 +144,17 @@ namespace WeedHoldings
             }
 
             int totalGold = GetExpectedTotalGold(cargo, regionId);
+            float voyageTime = GetVoyageTimeSeconds(cargo, regionId);
             foreach (var (potionId, amount) in cargo)
                 DataManager.Instance.RemovePotionFromInventory(potionId, amount);
 
             ship.state = ShipState.Voyaging;
             ship.regionId = regionId;
-            ship.totalTime = region.sellTimeSeconds;
-            ship.remainingTime = region.sellTimeSeconds;
+            ship.totalTime = voyageTime;
+            ship.remainingTime = voyageTime;
             ship.rewardGold = totalGold;
 
-            Debug.Log($"[TradeManager] 선박{shipIndex + 1} {region.regionName}(으)로 출항 ({region.sellTimeSeconds:F0}초, 예상 {totalGold:N0}G)");
+            Debug.Log($"[TradeManager] 선박{shipIndex + 1} {region.regionName}(으)로 출항 ({voyageTime:F0}초, 예상 {totalGold:N0}G)");
             OnShipsChanged?.Invoke();
             return true;
         }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace WeedHoldings
@@ -96,6 +97,20 @@ namespace WeedHoldings
         {
             var data = GetCurrentUpgradeData();
             return data != null ? data.goldBonusPercent : 0f;
+        }
+
+        /// <summary>
+        /// 무역소에 장착된 캐릭터 보너스를 반영한 판매(항해) 속도 배율. 무역소 시설 업그레이드 표에는
+        /// 아직 판매 속도 보너스 컬럼이 없어 시설 쪽 기여는 0으로 취급하고 캐릭터 보너스만 반영한다.
+        /// cargoPlantIds는 이번 항해에 실은 보약들의 주 재료 식물 ID 목록(여러 종류 가능).
+        /// </summary>
+        public float GetSellSpeedMultiplier(ICollection<int> cargoPlantIds)
+        {
+            int bonus = 0;
+            if (CharacterEquipManager.Instance != null)
+                bonus += Mathf.RoundToInt(CharacterEquipManager.Instance.GetSpeedBonusPercent(EquipCategory.Sell, cargoPlantIds));
+
+            return Mathf.Max(0.01f, (100f + bonus) / 100f);
         }
     }
 }

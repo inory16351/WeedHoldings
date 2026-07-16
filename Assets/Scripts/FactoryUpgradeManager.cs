@@ -81,10 +81,19 @@ namespace WeedHoldings
             return data != null ? data.failProbBonus : 0f;
         }
 
-        public float GetPotionTimeMultiplier()
+        /// <summary>
+        /// 제조 시설 업그레이드 + 공장에 장착된 캐릭터 보너스를 합산한 제조 속도 배율.
+        /// plantId는 이 보약의 주 재료 식물(DataManager.GetPotionPrimaryMaterialPlantID)로,
+        /// 해당 식물을 대상으로 하는 캐릭터의 대상 한정 보너스가 있으면 추가로 합산된다.
+        /// </summary>
+        public float GetPotionTimeMultiplier(int plantId)
         {
             var data = GetCurrentUpgradeData();
             int bonus = data != null ? (int)data.potionTimeBonus : 0;
+
+            if (CharacterEquipManager.Instance != null)
+                bonus += Mathf.RoundToInt(CharacterEquipManager.Instance.GetSpeedBonusPercent(EquipCategory.Factory, plantId));
+
             return Mathf.Max(0.01f, (100f + bonus) / 100f);
         }
     }

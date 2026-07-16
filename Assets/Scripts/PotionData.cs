@@ -19,5 +19,8 @@ namespace WeedHoldings
         public int requiredUnlockGold;
         public int sellGold;
         public Sprite potionIcon;
+
+        /// <summary>설명 테이블.xlsx에서 채워지는 보약 설명 (제조 패널 상세 표시용).</summary>
+        public string description;
     }
 }

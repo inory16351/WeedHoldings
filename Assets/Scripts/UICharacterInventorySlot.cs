@@ -31,26 +31,42 @@ namespace WeedHoldings
                 Debug.LogError($"[CharEquip] {name}에서 Card_Bg/Char_Icon을 못 찾음: cardBg={(cardBg != null)}, charIcon={(charIcon != null)}");
 
             // Char_Slot 원본에는 Image만 있고 Button이 없어서 클릭이 전혀 감지되지 않았다 - 직접 추가한다.
+            EnsureButton();
+        }
+
+        /// <summary>
+        /// button은 여기서만 만들어지므로(Setup에는 원래 자가 복구 로직이 없었다), 팝업이 비활성 상태일 때
+        /// Instantiate+SetActive(true)로 만들어진 클론은 Awake가 계층 활성화 시점까지 지연될 수 있다.
+        /// 그 상태에서 Setup()이 먼저 실행돼 interactable을 false로 정했더라도, 나중에 Awake가 뒤늦게 실행되며
+        /// 무조건 true로 되돌리면 "회색으로 보이는데 여전히 선택 가능한" 버그가 났다 - interactable 기본값을
+        /// 여기서 강제하지 않고 Setup이 유일한 결정권자가 되도록 한다.
+        /// </summary>
+        void EnsureButton()
+        {
+            if (button != null) return;
+
             button = GetComponent<Button>();
             if (button == null) button = gameObject.AddComponent<Button>();
 
             var ownImage = GetComponent<Image>();
             if (button.targetGraphic == null) button.targetGraphic = ownImage != null ? ownImage : cardBg;
-            button.interactable = true;
 
             button.onClick.RemoveListener(InvokeSelected);
             button.onClick.AddListener(InvokeSelected);
         }
 
+        static readonly Color EquippedElsewhereTint = new Color(0.32f, 0.32f, 0.32f, 1f);
+
         void InvokeSelected() => onSelected?.Invoke(character);
 
-        public void Setup(CharacterData data, Action<CharacterData> onSelectedCallback)
+        public void Setup(CharacterData data, bool equippedElsewhere, Action<CharacterData> onSelectedCallback)
         {
             character = data;
             onSelected = onSelectedCallback;
 
             // Awake()가 어떤 이유로든(오브젝트가 비활성 상태에서 복제된 직후라 자식 탐색이 아직 불안정했던
-            // 경우 등) Card_Bg/Char_Icon을 못 찾았을 수 있으니, 여기서 다시 한번 확실하게 찾아 스스로 복구한다.
+            // 경우 등) Card_Bg/Char_Icon/button을 못 찾았을 수 있으니, 여기서 다시 한번 확실하게 찾아 스스로 복구한다.
+            EnsureButton();
             if (cardBg == null) cardBg = transform.Find("Card_Bg")?.GetComponent<Image>();
             if (charIcon == null)
             {
@@ -64,16 +80,23 @@ namespace WeedHoldings
             bool cardBgFoundOnThisClone = cardBg != null;
             bool charIconFoundOnThisClone = charIcon != null;
 
+            Color tint = equippedElsewhere ? EquippedElsewhereTint : Color.white;
+
             if (cardBg != null)
             {
                 cardBg.enabled = true;
                 if (frame != null) cardBg.sprite = frame;
+                cardBg.color = tint;
             }
             if (charIcon != null)
             {
                 charIcon.enabled = data.characterIcon != null;
                 charIcon.sprite = data.characterIcon;
+                charIcon.color = tint;
             }
+
+            // 이미 다른 슬롯에 장착된 캐릭터는 회색으로 표시하고 선택(=재장착) 자체를 막는다.
+            if (button != null) button.interactable = !equippedElsewhere;
 
             // 각 항목을 따로따로 명확히 찍는다 - sprite?.name은 sprite가 null이든 이름이 빈 문자열이든
             // 똑같이 빈 칸으로 나와서 구분이 안 됐다(지난번 로그가 헷갈렸던 이유).

@@ -66,16 +66,21 @@ namespace WeedHoldings
         }
 
         /// <summary>
-        /// 현재 연구소 레벨 기준 성장 속도 배율. FieldPlot.PlantPlant()가 심는 순간
-        /// growTimeRemaining = growTimeSeconds / 이 배율 로 미리 계산해 확정한다.
-        /// (재적용 순서 문제를 피하려고 매번 LabUpgradeManager에서 직접 최신값을 읽는다)
+        /// 현재 연구소 레벨 + 농장에 장착된 캐릭터 보너스를 합산한 성장 속도 배율. FieldPlot.PlantPlant()가
+        /// 심는 순간 growTimeRemaining = growTimeSeconds / 이 배율 로 미리 계산해 확정한다.
+        /// (재적용 순서 문제를 피하려고 매번 LabUpgradeManager/CharacterEquipManager에서 직접 최신값을 읽는다)
+        /// 예: 연구소 레벨 20에서 growBonusPercent가 100이고 캐릭터 보너스가 20%면 100+100+20=220% -> 2.2배.
         /// </summary>
-        public float GetCurrentGrowthSpeedMultiplier()
+        public float GetCurrentGrowthSpeedMultiplier(int plantId)
         {
             if (LabUpgradeManager.Instance == null) return globalGrowthSpeed;
 
             var data = LabUpgradeManager.Instance.GetCurrentUpgradeData();
             int bonus = data != null ? data.growBonusPercent : 0;
+
+            if (CharacterEquipManager.Instance != null)
+                bonus += Mathf.RoundToInt(CharacterEquipManager.Instance.GetSpeedBonusPercent(EquipCategory.Farm, plantId));
+
             return Mathf.Max(0.01f, (100f + bonus) / 100f);
         }
 

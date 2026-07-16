@@ -56,7 +56,8 @@ namespace WeedHoldings
 
             if (timeText != null)
             {
-                float multiplier = FactoryUpgradeManager.Instance != null ? FactoryUpgradeManager.Instance.GetPotionTimeMultiplier() : 1f;
+                int primaryPlantId = DataManager.Instance != null ? DataManager.Instance.GetPotionPrimaryMaterialPlantID(potion.potionID) : 0;
+                float multiplier = FactoryUpgradeManager.Instance != null ? FactoryUpgradeManager.Instance.GetPotionTimeMultiplier(primaryPlantId) : 1f;
                 timeText.text = unlocked ? $"🕐 {potion.potionTimeSeconds / multiplier:F0}초" : "";
                 ConfigureAutoSize(timeText, 9f, 13f);
             }

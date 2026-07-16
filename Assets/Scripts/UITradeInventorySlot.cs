@@ -20,11 +20,6 @@ namespace WeedHoldings
         public int OwnedAmount { get; private set; }
         public int SelectedAmount { get; private set; }
 
-        void Awake()
-        {
-            if (icon != null) CharacterCardVisuals.FixupSlotIconBackground(icon.transform);
-        }
-
         public void Setup(PotionData potion, int owned, System.Action<UITradeInventorySlot> onPlus, System.Action<UITradeInventorySlot> onMinus)
         {
             PotionID = potion.potionID;
@@ -35,6 +30,9 @@ namespace WeedHoldings
             {
                 icon.sprite = potion.potionIcon;
                 icon.preserveAspect = true;
+                // BindSlotComponent가 icon 필드를 채우는 시점이 Awake보다 뒤라서(복제 직후 코드로
+                // 연결), Awake에서 처리하면 icon이 항상 null이라 슬롯 배경이 적용되지 않았다.
+                CharacterCardVisuals.FixupSlotIconBackground(icon.transform);
             }
             RefreshTexts();
 
@@ -48,6 +46,16 @@ namespace WeedHoldings
                 minusButton.onClick.RemoveAllListeners();
                 minusButton.onClick.AddListener(() => onMinus?.Invoke(this));
             }
+        }
+
+        /// <summary>
+        /// 지역/선박을 다시 선택해 인벤토리 슬롯이 통째로 재생성될 때, 이전에 골라뒀던 판매 수량을
+        /// 그대로 복원하기 위한 용도. 보유 수량을 넘지 않도록 클램프한다.
+        /// </summary>
+        public void SetSelectedAmount(int amount)
+        {
+            SelectedAmount = Mathf.Clamp(amount, 0, OwnedAmount);
+            RefreshTexts();
         }
 
         public bool TryIncrease()

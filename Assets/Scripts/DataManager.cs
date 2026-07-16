@@ -17,6 +17,7 @@ namespace WeedHoldings
         public string potionExcelFilePath = "../슬기로운재배생활/제조테이블.xlsx";
         public string tradeExcelFilePath = "../슬기로운재배생활/무역소 테이블.xlsx";
         public string characterExcelFilePath = "../슬기로운재배생활/캐릭터테이블.xlsx";
+        public string descriptionExcelFilePath = "../슬기로운재배생활/설명 테이블.xlsx";
 
         Dictionary<int, PlantData> plantDict = new Dictionary<int, PlantData>();
         Dictionary<int, LabUpgradeData> upgradeDict = new Dictionary<int, LabUpgradeData>();
@@ -62,6 +63,8 @@ namespace WeedHoldings
             LoadPotionTableFromExcel();
             LoadTradeTableFromExcel();
             LoadCharacterTableFromExcel();
+            // 식물/보약/캐릭터가 전부 로드된 뒤, 설명 테이블의 텍스트를 각 데이터의 설명 필드로 덮어쓴다.
+            LoadDescriptionTableFromExcel();
 #endif
             if (unlockedPotionIDs.Count == 0 && potionDict.Count > 0)
             {
@@ -437,6 +440,53 @@ namespace WeedHoldings
                 if (!characterDict.ContainsKey(character.characterID))
                     characterDict.Add(character.characterID, character);
             }
+        }
+
+        /// <summary>
+        /// 설명 테이블.xlsx("Sheet1")를 읽어 식물/보약/캐릭터 설명을 채운다. 시트 구조는
+        /// Fake_ID(인조 식별자) | ID(식물/보약/캐릭터의 실제 ID) | Script_text(설명 문구) 세 컬럼뿐이라,
+        /// ID 범위(1만/3만/9만대)로 대상 종류를 구분해서 해당 데이터의 설명 필드에 그대로 덮어쓴다.
+        /// </summary>
+        void LoadDescriptionTableFromExcel()
+        {
+            string path = System.IO.Path.GetFullPath(descriptionExcelFilePath);
+            if (!System.IO.File.Exists(path))
+            {
+                Debug.LogWarning($"[DataManager] 설명 테이블 파일을 찾을 수 없습니다: {path}");
+                return;
+            }
+
+            var rows = ExcelParser.ParseSheetByName(path, "Sheet1");
+            if (rows == null) return;
+
+            int appliedPlant = 0, appliedPotion = 0, appliedCharacter = 0;
+            for (int i = 0; i < rows.Count; i++)
+            {
+                var r = rows[i];
+                if (r.Length < 3 || !IsDataRow(r[1])) continue;
+
+                int targetId = ParseInt(r[1]);
+                string text = r[2] ?? "";
+                if (string.IsNullOrEmpty(text)) continue;
+
+                if (plantDict.TryGetValue(targetId, out var plant))
+                {
+                    plant.description = text;
+                    appliedPlant++;
+                }
+                else if (potionDict.TryGetValue(targetId, out var potion))
+                {
+                    potion.description = text;
+                    appliedPotion++;
+                }
+                else if (characterDict.TryGetValue(targetId, out var character))
+                {
+                    character.explain = text;
+                    appliedCharacter++;
+                }
+            }
+
+            Debug.Log($"[DataManager] 설명 테이블 로드 완료: 식물 {appliedPlant}개, 보약 {appliedPotion}개, 캐릭터 {appliedCharacter}개 설명 적용");
         }
 #endif
 

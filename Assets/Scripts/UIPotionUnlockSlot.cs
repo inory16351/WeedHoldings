@@ -41,13 +41,16 @@ namespace WeedHoldings
             if (icon != null)
             {
                 icon.sprite = potion.potionIcon;
+                icon.preserveAspect = true;
                 icon.color = unlocked ? Color.white : new Color(0.03f, 0.03f, 0.03f);
             }
 
             if (nameText != null)
             {
                 SetAutoSize(nameText, 10f, 15f);
-                nameText.text = unlocked ? potion.potionName : $"???\n{LockedDescription}";
+                nameText.text = unlocked
+                    ? $"{potion.potionName}\n{potion.description}"
+                    : $"???\n{LockedDescription}";
             }
 
             if (infoText != null)

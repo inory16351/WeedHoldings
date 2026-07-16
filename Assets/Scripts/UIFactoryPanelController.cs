@@ -296,13 +296,17 @@ namespace WeedHoldings
             }
             if (selectedPotionNameText != null)
             {
-                selectedPotionNameText.text = potion.potionName;
+                selectedPotionNameText.text = string.IsNullOrEmpty(potion.description)
+                    ? potion.potionName
+                    : $"{potion.potionName}\n{potion.description}";
                 selectedPotionNameText.color = Color.white;
-                ConfigureAutoSize(selectedPotionNameText, 12f, 24f);
+                selectedPotionNameText.enableWordWrapping = true;
+                ConfigureAutoSize(selectedPotionNameText, 9f, 24f);
             }
             if (timeText != null)
             {
-                float multiplier = FactoryUpgradeManager.Instance != null ? FactoryUpgradeManager.Instance.GetPotionTimeMultiplier() : 1f;
+                int primaryPlantId = DataManager.Instance != null ? DataManager.Instance.GetPotionPrimaryMaterialPlantID(potion.potionID) : 0;
+                float multiplier = FactoryUpgradeManager.Instance != null ? FactoryUpgradeManager.Instance.GetPotionTimeMultiplier(primaryPlantId) : 1f;
                 timeText.text = $"제작 시간: {potion.potionTimeSeconds / multiplier:F0}초";
                 timeText.color = Color.white;
                 ConfigureAutoSize(timeText, 10f, 16f);
@@ -329,8 +333,9 @@ namespace WeedHoldings
         {
             if (selectedPotionImage != null)
             {
-                selectedPotionImage.sprite = null;
-                selectedPotionImage.color = EmptySlotColor;
+                var emptySprite = CharacterEquipManager.GetEmptySlotIcon();
+                selectedPotionImage.sprite = emptySprite;
+                selectedPotionImage.color = emptySprite != null ? Color.white : EmptySlotColor;
             }
             if (selectedPotionNameText != null)
             {
@@ -392,8 +397,10 @@ namespace WeedHoldings
                 {
                     if (resourceSlotIcons[i] != null)
                     {
-                        resourceSlotIcons[i].sprite = null;
-                        resourceSlotIcons[i].color = new Color(1f, 1f, 1f, 0.15f);
+                        var emptySprite = CharacterEquipManager.GetEmptySlotIcon();
+                        resourceSlotIcons[i].sprite = emptySprite;
+                        resourceSlotIcons[i].color = emptySprite != null ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 1f, 1f, 0.15f);
+                        resourceSlotIcons[i].preserveAspect = true;
                     }
                     if (resourceSlotAmounts[i] != null)
                         resourceSlotAmounts[i].text = "";
@@ -414,8 +421,10 @@ namespace WeedHoldings
                 resourceSlotRoots[i].gameObject.SetActive(true);
                 if (resourceSlotIcons[i] != null)
                 {
-                    resourceSlotIcons[i].sprite = null;
-                    resourceSlotIcons[i].color = new Color(1f, 1f, 1f, 0.15f);
+                    var emptySprite = CharacterEquipManager.GetEmptySlotIcon();
+                    resourceSlotIcons[i].sprite = emptySprite;
+                    resourceSlotIcons[i].color = emptySprite != null ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 1f, 1f, 0.15f);
+                    resourceSlotIcons[i].preserveAspect = true;
                 }
                 if (resourceSlotAmounts[i] != null)
                 {

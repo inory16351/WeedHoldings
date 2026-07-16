@@ -274,7 +274,7 @@ namespace WeedHoldings
             // (매 프레임 배율을 곱하는 방식 대신, 여기서 한 번만 나눠서 growTimeRemaining 자체를 줄인다.
             //  고사 시간은 기획서상 성장 속도 보너스의 영향을 받지 않으므로 원본 값을 그대로 쓴다.)
             float speedMultiplier = CultivationManager.Instance != null
-                ? CultivationManager.Instance.GetCurrentGrowthSpeedMultiplier()
+                ? CultivationManager.Instance.GetCurrentGrowthSpeedMultiplier(plant.plantID)
                 : 1f;
             growTimeRemaining = plant.growTimeSeconds / speedMultiplier;
             witherTimeRemaining = plant.witherTimeSeconds;
