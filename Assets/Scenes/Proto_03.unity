@@ -53110,7 +53110,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeedHoldings.GoldManager
   goldText: {fileID: 2500000027}
-  gold: 10000000
+  gold: 1000
 --- !u!1 &2500000091
 GameObject:
   m_ObjectHideFlags: 0
