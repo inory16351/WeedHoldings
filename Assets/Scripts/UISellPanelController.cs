@@ -27,6 +27,8 @@ namespace WeedHoldings
         Transform[] regionRoots = new Transform[RegionSlotCount];
         Button[] regionButtons = new Button[RegionSlotCount];
         TMP_Text[] regionTexts = new TMP_Text[RegionSlotCount];
+        Image[] regionLabelImages = new Image[RegionSlotCount];
+        Image[] regionLockIcons = new Image[RegionSlotCount];
         int[] regionIdBySlot = new int[RegionSlotCount];
 
         // Inventory_Slot
@@ -140,6 +142,7 @@ namespace WeedHoldings
                     regionButtons[i] = button;
                     regionTexts[i] = region.GetComponentInChildren<TMP_Text>();
                     ConfigureAutoSize(regionTexts[i], 10f, 18f);
+                    if (regionTexts[i] != null) regionTexts[i].enabled = false;
                 }
             }
 
@@ -147,11 +150,11 @@ namespace WeedHoldings
             if (inventorySlot != null)
             {
                 inventorySlotTemplate = inventorySlot.Find(InventorySlotBaseName);
-                ConfigureAutoSize(inventorySlot.Find("Text (TMP)")?.GetComponent<TMP_Text>(), 12f, 22f);
+                SetHeaderText(inventorySlot.Find("Text (TMP)"), "보유 화물", 12f, 22f);
             }
 
-            ConfigureAutoSize(shipTrack?.Find("Text (TMP)")?.GetComponent<TMP_Text>(), 12f, 22f);
-            ConfigureAutoSize(regionPanel?.Find("Text (TMP)")?.GetComponent<TMP_Text>(), 12f, 22f);
+            SetHeaderText(shipTrack?.Find("Text (TMP)"), "무역선", 12f, 22f);
+            SetHeaderText(regionPanel?.Find("Text (TMP)"), "목적지", 12f, 22f);
 
             var sellPanel = transform.Find("Sell_Panel");
             if (sellPanel != null)
@@ -166,7 +169,7 @@ namespace WeedHoldings
             {
                 timeText = timePanel.Find("Time")?.GetComponent<TMP_Text>();
                 ConfigureAutoSize(timeText, 12f, 20f);
-                ConfigureAutoSize(timePanel.Find("Text (TMP) (1)")?.GetComponent<TMP_Text>(), 10f, 18f);
+                SetHeaderText(timePanel.Find("Text (TMP) (1)"), "예상 소요 시간", 10f, 18f);
             }
 
             var sellInfo = transform.Find("Sell_Info");
@@ -185,7 +188,7 @@ namespace WeedHoldings
                 ConfigureAutoSize(luggageAmountText, 10f, 16f);
                 ConfigureAutoSize(goldText, 10f, 16f);
                 ConfigureAutoSize(goldAmountText, 10f, 16f);
-                ConfigureAutoSize(sellInfo.Find("Text (TMP)")?.GetComponent<TMP_Text>(), 12f, 22f);
+                SetHeaderText(sellInfo.Find("Text (TMP)"), "거래 요약", 12f, 22f);
 
                 var goldIcon = sellInfo.Find("Gold")?.GetComponent<Image>();
                 if (goldIcon != null)
@@ -209,6 +212,16 @@ namespace WeedHoldings
             text.enableAutoSizing = true;
             text.fontSizeMin = min;
             text.fontSizeMax = max;
+        }
+
+        /// <summary>씬에 미리 만들어진 채 내용이 채워지지 않았던(TMP 기본값 "New Text") 구역 헤더에
+        /// 실제 라벨을 채운다.</summary>
+        static void SetHeaderText(Transform target, string label, float min, float max)
+        {
+            var text = target?.GetComponent<TMP_Text>();
+            if (text == null) return;
+            text.text = label;
+            ConfigureAutoSize(text, min, max);
         }
 
         /// <summary>
@@ -340,13 +353,20 @@ namespace WeedHoldings
 
                 if (!unlocked)
                 {
-                    if (shipTrackTexts[i] != null) shipTrackTexts[i].text = "잠김";
+                    if (shipTrackTexts[i] != null)
+                    {
+                        shipTrackTexts[i].text = "잠김";
+                        // 자물쇠 아이콘이 슬롯 정중앙에 오므로, "잠김" 글자는 그 아래로 내려서 겹치지 않게 한다.
+                        shipTrackTexts[i].margin = new Vector4(0f, 130f, 0f, 0f);
+                    }
                     if (shipTrackButtons[i] != null) shipTrackButtons[i].interactable = false;
                     SetSlotColor(shipTrackRoots[i], new Color(0.12f, 0.12f, 0.14f, 0.9f));
-                    EnsureLockIcon(shipTrackRoots[i], ref shipTrackLockIcons[i]).enabled = true;
+                    EnsureLockIcon(shipTrackRoots[i], ref shipTrackLockIcons[i], Vector2.zero).enabled = true;
+                    SetSlotSelectedOutline(shipTrackRoots[i], false);
                     continue;
                 }
                 if (shipTrackLockIcons[i] != null) shipTrackLockIcons[i].enabled = false;
+                if (shipTrackTexts[i] != null) shipTrackTexts[i].margin = Vector4.zero;
 
                 bool isVoyaging = ship != null && ship.state == ShipState.Voyaging;
                 if (shipTrackButtons[i] != null)
@@ -366,9 +386,11 @@ namespace WeedHoldings
                     }
                 }
 
-                Color bg = isVoyaging ? new Color(0.55f, 0.45f, 0.15f, 0.9f)
-                    : (i == selectedShipIndex ? new Color(0.25f, 0.45f, 0.85f, 0.9f) : new Color(0.18f, 0.18f, 0.22f, 0.9f));
+                // 해금된 트랙은 선택 여부와 상관없이 항상 밝게(흰색) 표시하고, 선택 여부는 Region_Panel과
+                // 동일하게 파란 테두리로만 표시한다. 항해 중일 때만 별도로 황토색 틴트를 남겨 상태를 구분한다.
+                Color bg = isVoyaging ? new Color(0.55f, 0.45f, 0.15f, 0.9f) : Color.white;
                 SetSlotColor(shipTrackRoots[i], bg);
+                SetSlotSelectedOutline(shipTrackRoots[i], !isVoyaging && i == selectedShipIndex);
             }
         }
 
@@ -455,11 +477,12 @@ namespace WeedHoldings
                 int regionId = regionIdBySlot[i];
                 bool unlocked = regionId > 0 && (SellUpgradeManager.Instance == null || SellUpgradeManager.Instance.IsRegionUnlocked(regionId));
 
-                if (regionTexts[i] != null)
-                {
-                    var region = regionId > 0 ? DataManager.Instance?.GetRegionByID(regionId) : null;
-                    regionTexts[i].text = unlocked ? (region != null ? region.regionName : "") : "???";
-                }
+                // 지역명 텍스트는 사진 배경 위에서 잘 안 보이므로 제거하고, 대신 폰트를 미리 구운
+                // 라벨 이미지(Region_Label_*)를 사용한다. 잠긴 지역은 "???" 라벨 + 중앙 자물쇠 아이콘.
+                UpdateRegionLabelImage(i, regionId, unlocked);
+                // 다른 잠긴 트랙들과 달리 지역 슬롯은 겹치는 텍스트가 없으므로 자물쇠를 중앙에 그대로 둔다.
+                EnsureLockIcon(regionRoots[i], ref regionLockIcons[i], Vector2.zero).enabled = !unlocked;
+
                 if (regionButtons[i] != null)
                     regionButtons[i].interactable = unlocked;
 
@@ -469,6 +492,66 @@ namespace WeedHoldings
                 SetSlotColor(regionRoots[i], bg);
                 SetSlotSelectedOutline(regionRoots[i], unlocked && regionId == selectedRegionId);
             }
+        }
+
+        static Sprite cachedLockedRegionLabel;
+        static readonly Dictionary<int, Sprite> cachedRegionLabels = new Dictionary<int, Sprite>();
+
+        /// <summary>지역명을 사진 배경 위에 텍스트로 직접 그리면 잘 안 보이므로, 미리 구운 라벨
+        /// 이미지(Resources/Regions/Region_Label_*)로 대체한다. 슬롯 하단에 작은 배지 형태로 붙인다.</summary>
+        void UpdateRegionLabelImage(int slotIndex, int regionId, bool unlocked)
+        {
+            var root = regionRoots[slotIndex];
+            if (root == null) return;
+
+            var image = EnsureRegionLabelImage(root, ref regionLabelImages[slotIndex]);
+            if (image == null) return;
+
+            if (!unlocked)
+            {
+                if (cachedLockedRegionLabel == null)
+                    cachedLockedRegionLabel = Resources.Load<Sprite>("Regions/Region_Label_Locked");
+                image.sprite = cachedLockedRegionLabel;
+                image.enabled = image.sprite != null;
+                return;
+            }
+
+            if (regionId <= 0 || !RegionImageNames.TryGetValue(regionId, out var imageName))
+            {
+                image.enabled = false;
+                return;
+            }
+
+            if (!cachedRegionLabels.TryGetValue(regionId, out var sprite))
+            {
+                sprite = Resources.Load<Sprite>($"Regions/Region_Label_{imageName}");
+                cachedRegionLabels[regionId] = sprite;
+            }
+            image.sprite = sprite;
+            image.enabled = sprite != null;
+        }
+
+        /// <summary>지역 슬롯 하단에 라벨 배지 이미지를 붙이기 위해 첫 호출 시 자식 Image를 만들어 캐싱한다.</summary>
+        static Image EnsureRegionLabelImage(Transform root, ref Image cached)
+        {
+            if (cached != null) return cached;
+            if (root == null) return null;
+
+            var go = new GameObject("Region_Label_Image", typeof(RectTransform));
+            go.transform.SetParent(root, false);
+            go.transform.SetAsLastSibling();
+
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0f);
+            rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.sizeDelta = new Vector2(110f, 34f);
+            rect.anchoredPosition = new Vector2(0f, 8f);
+
+            cached = go.AddComponent<Image>();
+            cached.preserveAspect = true;
+            cached.raycastTarget = false;
+            return cached;
         }
 
         static void SetSlotColor(Transform root, Color color)
@@ -488,8 +571,9 @@ namespace WeedHoldings
             return cachedLockSprite;
         }
 
-        /// <summary>잠긴 슬롯에 자물쇠 아이콘을 씌우기 위해 첫 호출 시 자식 Image를 하나 만들어 캐싱한다.</summary>
-        static Image EnsureLockIcon(Transform root, ref Image cached)
+        /// <summary>잠긴 슬롯에 자물쇠 아이콘을 씌우기 위해 첫 호출 시 자식 Image를 하나 만들어 캐싱한다.
+        /// anchoredPosition을 지정하지 않으면 "잠김" 텍스트(슬롯 중앙)와 안 겹치게 위쪽에 배치한다.</summary>
+        static Image EnsureLockIcon(Transform root, ref Image cached, Vector2? anchoredPosition = null)
         {
             if (cached != null) return cached;
             if (root == null) return null;
@@ -502,7 +586,7 @@ namespace WeedHoldings
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = new Vector2(48f, 48f);
-            rect.anchoredPosition = Vector2.zero;
+            rect.anchoredPosition = anchoredPosition ?? new Vector2(0f, 55f);
 
             cached = go.AddComponent<Image>();
             cached.sprite = ResolveLockSprite();

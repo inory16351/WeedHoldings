@@ -92,7 +92,7 @@ namespace WeedHoldings
             rt.sizeDelta = new Vector2(0, HeaderHeight);
 
             var text = headerGO.AddComponent<TextMeshProUGUI>();
-            text.text = "식물 연구";
+            text.text = "식물 종류";
             text.alignment = TextAlignmentOptions.Center;
             text.fontSize = 20;
             text.color = Color.white;

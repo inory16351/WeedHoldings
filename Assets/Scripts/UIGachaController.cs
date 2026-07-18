@@ -89,6 +89,22 @@ namespace WeedHoldings
             resultButton?.onClick.AddListener(OnResultButtonClicked);
             back1Button?.onClick.AddListener(OnBackClicked);
             back10Button?.onClick.AddListener(OnBackClicked);
+
+            UpdatePullButtonInteractable();
+        }
+
+        /// <summary>골드가 모자라면 뽑기 버튼을 눌러도 소용없으므로 미리 비활성화해서 알려준다.
+        /// GoldManager에 변경 이벤트가 없어 매 프레임 가볍게 확인한다.</summary>
+        void Update()
+        {
+            UpdatePullButtonInteractable();
+        }
+
+        void UpdatePullButtonInteractable()
+        {
+            int gold = GoldManager.Instance != null ? GoldManager.Instance.gold : 0;
+            if (gacha1Button != null) gacha1Button.interactable = gold >= SinglePullCost;
+            if (gacha10Button != null) gacha10Button.interactable = gold >= MultiPullCost;
         }
 
         /// <summary>버튼 라벨을 "1회 뽑기 / G 10,000" 형태로 채우고 한글 깨짐이 없도록 노토산스를 적용한다.</summary>
@@ -99,10 +115,8 @@ namespace WeedHoldings
             var label = button.transform.Find("Text (TMP)")?.GetComponent<TextMeshProUGUI>();
             if (label == null) return;
 
-            label.text = $"{title}\nG {cost:N0}";
-
-            var notoSans = UIScrollListFactory.ResolveNotoSansFont();
-            if (notoSans != null) label.font = notoSans;
+            // 버튼 이미지 자체에 "1회 뽑기 / G 30,000" 같은 문구가 이미 그려져 있어 중복 텍스트를 끈다.
+            label.enabled = false;
         }
 
         /// <summary>1회/10회 버튼 크기와 세로 위치를 통일한다(가로 위치·간격은 유지).</summary>
@@ -192,7 +206,14 @@ namespace WeedHoldings
             if (resultButtonImage == null) return;
 
             var ship = GachaManager.GetShipSpriteForBestGrade(results);
-            if (ship != null) resultButtonImage.sprite = ship;
+            if (ship != null)
+            {
+                resultButtonImage.sprite = ship;
+                // 기본 UISprite(9-slice)가 그대로 남아 있으면 래스터 이미지가 늘어나며 흐릿해지므로
+                // Simple 타입으로 바꾸고 비율을 유지해 원본 그림이 선명하게 보이도록 한다.
+                resultButtonImage.type = Image.Type.Simple;
+                resultButtonImage.preserveAspect = true;
+            }
         }
 
         void EnterGachaChild()

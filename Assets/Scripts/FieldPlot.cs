@@ -68,7 +68,7 @@ namespace WeedHoldings
         private float witherTimeRemaining = 0f;
         private float witheredGraceTimeRemaining = 0f;
         private bool isGrowing = false;
-        private const float WITHERED_GRACE_TIME = 60f; // 다른 시간 값들과 함께 6배로 늘려 체크 주기에 맞춤
+        private const float WITHERED_GRACE_TIME = 20f;
 
         public System.Action<FieldPlot, GrowthState> OnGrowthStateChanged;
         public System.Action<FieldPlot, WitherState> OnWitherStateChanged;
@@ -255,12 +255,10 @@ namespace WeedHoldings
                 return;
             }
 
-            if (witherState == WitherState.Withering)
-            {
-                Water();
-                return;
-            }
-
+            // 시들음(Withering) 상태는 밭을 직접 클릭해서 물을 줄 수 없다. 물주기는 쿨타임이 걸린
+            // 전용 물주기 버튼(WaterButtonHandler)으로만 가능해야 하는데, 예전에는 여기서 바로
+            // Water()를 호출해버려서 그 쿨타임을 완전히 무시하고 밭을 눌러 성장시간이 이미 끝난
+            // 식물을 공짜로 즉시 수확 가능 상태로 바꿔버리는 버그가 있었다.
             Debug.Log($"Field_{plotIndex} clicked | Growth: {growthState}, Wither: {witherState}");
         }
 

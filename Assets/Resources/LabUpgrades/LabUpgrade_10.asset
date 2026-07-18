@@ -17,4 +17,4 @@ MonoBehaviour:
   growBonusPercent: 50
   requiredGold: 18000
   unlockFieldRow: 15
-  harvestGroupID: 1002
+  harvestGroupID: 1005

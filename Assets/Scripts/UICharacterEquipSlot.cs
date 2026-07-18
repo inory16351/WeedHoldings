@@ -36,6 +36,23 @@ namespace WeedHoldings
             var match = Regex.Match(name, @"(\d+)$");
             slotIndex = match.Success ? int.Parse(match.Value) - 1 : 0;
 
+            // Farm/Factory/Sell 열 헤더("Text (TMP)")는 슬롯 3개의 공통 형제라 씬에 채워지지 않은 채
+            // 남아 있었다. 열마다 슬롯 셋 중 아무거나 Awake될 때 한 번씩 채워도 무해하므로 여기서 채운다.
+            var columnHeader = transform.parent != null ? transform.parent.Find("Text (TMP)")?.GetComponent<TextMeshProUGUI>() : null;
+            if (columnHeader != null)
+            {
+                columnHeader.text = category switch
+                {
+                    EquipCategory.Farm => "농장 캐릭터",
+                    EquipCategory.Factory => "제조 캐릭터",
+                    EquipCategory.Sell => "무역 캐릭터",
+                    _ => columnHeader.text,
+                };
+                columnHeader.enableAutoSizing = true;
+                columnHeader.fontSizeMin = 12f;
+                columnHeader.fontSizeMax = 22f;
+            }
+
             var iconTransform = transform.Find("Char_Icon");
             iconButton = iconTransform?.GetComponent<Button>();
             if (iconButton == null && iconTransform != null) iconButton = iconTransform.gameObject.AddComponent<Button>();
