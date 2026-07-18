@@ -17,10 +17,10 @@ MonoBehaviour:
   description: "\uAC00\uBB3C\uAC00\uBB3C\uBC29\uC6B8\uAF43 \uC528\uC557\uC785\uB2C8\uB2E4.
     \uBC2D\uC5D0 \uC2EC\uC5B4 \uC218\uD655\uD558\uC5EC \uC57D\uC7AC\uB85C \uD65C\uC6A9\uD560
     \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-  growTimeSeconds: 1440
+  growTimeSeconds: 520
   requiredHarvestLevel: 17
   requiredGoldToUnlock: 4800
-  witherTimeSeconds: 576
+  witherTimeSeconds: 208
   harvestMinCount: 1
   harvestMaxCount: 1
   sellGoldValue: 240

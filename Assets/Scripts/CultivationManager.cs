@@ -90,7 +90,7 @@ namespace WeedHoldings
         public void RegisterAllPlotsInScene()
         {
             // FindObjectsInactive.Include 필수: UILobbyNavigation.Start()가 CultivationManager 생성 직후
-            // OnBack()으로 FarmPanel을 비활성화하는데, 이 등록 스윕은 그보다 늦게(같은 프레임 뒤쪽) 실행되므로
+            // ReturnToLobby()로 FarmPanel을 비활성화하는데, 이 등록 스윕은 그보다 늦게(같은 프레임 뒤쪽) 실행되므로
             // 기본 옵션(활성 오브젝트만 탐색)으로는 FarmPanel 하위의 밭들이 전부 누락된다.
             var plots = FindObjectsByType<FieldPlot>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (var plot in plots)

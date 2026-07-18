@@ -20,6 +20,7 @@ namespace WeedHoldings
         Transform[] shipTrackRoots = new Transform[TradeManager.ShipCount];
         Button[] shipTrackButtons = new Button[TradeManager.ShipCount];
         TMP_Text[] shipTrackTexts = new TMP_Text[TradeManager.ShipCount];
+        Image[] shipTrackLockIcons = new Image[TradeManager.ShipCount];
 
         // Region_Panel
         Transform regionPanel;
@@ -342,8 +343,10 @@ namespace WeedHoldings
                     if (shipTrackTexts[i] != null) shipTrackTexts[i].text = "잠김";
                     if (shipTrackButtons[i] != null) shipTrackButtons[i].interactable = false;
                     SetSlotColor(shipTrackRoots[i], new Color(0.12f, 0.12f, 0.14f, 0.9f));
+                    EnsureLockIcon(shipTrackRoots[i], ref shipTrackLockIcons[i]).enabled = true;
                     continue;
                 }
+                if (shipTrackLockIcons[i] != null) shipTrackLockIcons[i].enabled = false;
 
                 bool isVoyaging = ship != null && ship.state == ShipState.Voyaging;
                 if (shipTrackButtons[i] != null)
@@ -473,6 +476,39 @@ namespace WeedHoldings
             if (root == null) return;
             var img = root.GetComponent<Image>();
             if (img != null) img.color = color;
+        }
+
+        static Sprite cachedLockSprite;
+
+        /// <summary>Resources/UI/Rock.png를 잠금 아이콘으로 사용한다.</summary>
+        static Sprite ResolveLockSprite()
+        {
+            if (cachedLockSprite == null)
+                cachedLockSprite = Resources.Load<Sprite>("UI/Rock");
+            return cachedLockSprite;
+        }
+
+        /// <summary>잠긴 슬롯에 자물쇠 아이콘을 씌우기 위해 첫 호출 시 자식 Image를 하나 만들어 캐싱한다.</summary>
+        static Image EnsureLockIcon(Transform root, ref Image cached)
+        {
+            if (cached != null) return cached;
+            if (root == null) return null;
+
+            var go = new GameObject("Lock_Icon", typeof(RectTransform));
+            go.transform.SetParent(root, false);
+            go.transform.SetAsLastSibling();
+
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(48f, 48f);
+            rect.anchoredPosition = Vector2.zero;
+
+            cached = go.AddComponent<Image>();
+            cached.sprite = ResolveLockSprite();
+            cached.preserveAspect = true;
+            cached.raycastTarget = false;
+            return cached;
         }
 
         static readonly Color SelectedOutlineColor = new Color(0.2f, 0.55f, 1f, 1f);

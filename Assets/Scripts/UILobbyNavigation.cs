@@ -77,7 +77,7 @@ namespace WeedHoldings
             }
 
             if (backButton != null)
-                backButton.onClick.AddListener(OnBack);
+                backButton.onClick.AddListener(OnBackButtonClicked);
 
             if (farmButton != null)
                 farmButton.onClick.AddListener(() => ShowPanel(0));
@@ -105,7 +105,7 @@ namespace WeedHoldings
             if (gachaNavButton != null)
                 gachaNavButton.onClick.AddListener(() => ShowPanel(5));
 
-            OnBack();
+            ReturnToLobby();
         }
 
         static T EnsureManager<T>() where T : Component
@@ -267,7 +267,35 @@ namespace WeedHoldings
                 charEquip.gameObject.AddComponent<UICharacterEquipPopup>();
         }
 
-        void OnBack()
+        /// <summary>
+        /// 탑 패널 뒤로가기 버튼 클릭 시 호출된다. 이미 메인 로비 화면(서브 패널이 하나도 열려있지
+        /// 않은 상태)이라면 더 돌아갈 곳이 없으므로 게임을 종료하고, 서브 패널이 열려 있다면 기존처럼
+        /// 로비로 복귀한다.
+        /// </summary>
+        void OnBackButtonClicked()
+        {
+            if (IsInLobby)
+            {
+                QuitGame();
+                return;
+            }
+
+            ReturnToLobby();
+        }
+
+        /// <summary>서브 패널이 하나도 열려있지 않으면(=메인 로비 화면이 보이는 상태) true.</summary>
+        bool IsInLobby => panels == null || panels.All(p => p == null || !p.activeSelf);
+
+        static void QuitGame()
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+        }
+
+        void ReturnToLobby()
         {
             for (int i = 0; i < panels.Length; i++)
             {

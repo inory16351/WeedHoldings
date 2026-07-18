@@ -18,6 +18,7 @@ namespace WeedHoldings
         TMP_Text timeText;
         Button craftingButton;
         TMP_Text craftingButtonText;
+        Image lockIcon;
 
         static Sprite cachedFailSprite;
 
@@ -27,6 +28,38 @@ namespace WeedHoldings
             if (cachedFailSprite == null)
                 cachedFailSprite = Resources.Load<Sprite>("Potions/Potion_Fail");
             return cachedFailSprite;
+        }
+
+        static Sprite cachedLockSprite;
+
+        /// <summary>Resources/UI/Rock.png를 잠금 아이콘으로 사용한다.</summary>
+        static Sprite ResolveLockSprite()
+        {
+            if (cachedLockSprite == null)
+                cachedLockSprite = Resources.Load<Sprite>("UI/Rock");
+            return cachedLockSprite;
+        }
+
+        /// <summary>잠긴 트랙에 자물쇠 아이콘을 씌우기 위해 첫 호출 시 자식 Image를 하나 만들어 캐싱한다.</summary>
+        Image EnsureLockIcon()
+        {
+            if (lockIcon != null) return lockIcon;
+
+            var go = new GameObject("Lock_Icon", typeof(RectTransform));
+            go.transform.SetParent(transform, false);
+            go.transform.SetAsLastSibling();
+
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(48f, 48f);
+            rect.anchoredPosition = Vector2.zero;
+
+            lockIcon = go.AddComponent<Image>();
+            lockIcon.sprite = ResolveLockSprite();
+            lockIcon.preserveAspect = true;
+            lockIcon.raycastTarget = false;
+            return lockIcon;
         }
 
         void Awake()
@@ -78,12 +111,14 @@ namespace WeedHoldings
             if (!unlocked)
             {
                 SetIconsVisible(false);
+                EnsureLockIcon().enabled = true;
                 if (potionNameText != null) potionNameText.text = "잠김";
                 if (timeText != null) timeText.text = "";
                 if (craftingButton != null) craftingButton.interactable = false;
                 if (craftingButtonText != null) craftingButtonText.text = "잠김";
                 return;
             }
+            if (lockIcon != null) lockIcon.enabled = false;
 
             if (track == null || track.state == TrackState.Idle)
             {
