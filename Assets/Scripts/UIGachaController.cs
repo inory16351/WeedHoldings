@@ -223,6 +223,7 @@ namespace WeedHoldings
             result1Panel?.gameObject.SetActive(false);
             result10Panel?.gameObject.SetActive(false);
             SetTopPanelActive(false);
+            SfxManager.Play("Horn02");
         }
 
         void OnResultButtonClicked()

@@ -240,12 +240,14 @@ namespace WeedHoldings
             {
                 PlantData selected = PlantSelectionManager.Instance.selectedPlant;
                 PlantPlant(selected);
+                SfxManager.Play("Planting");
                 return;
             }
 
             if (growthState == GrowthState.ReadyToHarvest && plantedPlant != null)
             {
                 Harvest();
+                SfxManager.Play("Planting");
                 return;
             }
 

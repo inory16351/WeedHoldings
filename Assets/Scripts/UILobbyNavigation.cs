@@ -42,6 +42,10 @@ namespace WeedHoldings
         Color normalColor = Color.white;
         Color activeColor = new Color(0.5f, 0.5f, 0.5f, 1);
 
+        Image backButtonImage;
+        static Sprite cachedBackSprite;
+        static Sprite cachedGameEndSprite;
+
         void Start()
         {
             // 메인 로비 버튼(농장/공장/무역소/연구실)이 담긴 최상위 "Panel". 서브 패널이 열려 있는 동안
@@ -77,7 +81,12 @@ namespace WeedHoldings
             }
 
             if (backButton != null)
+            {
                 backButton.onClick.AddListener(OnBackButtonClicked);
+                backButtonImage = backButton.GetComponent<Image>();
+                var backButtonLabel = backButton.GetComponentInChildren<TMP_Text>(true);
+                if (backButtonLabel != null) backButtonLabel.enabled = false;
+            }
 
             if (farmButton != null)
                 farmButton.onClick.AddListener(() => ShowPanel(0));
@@ -164,6 +173,9 @@ namespace WeedHoldings
             var witherWarning = GetComponent<UIGlobalWitherWarning>();
             if (witherWarning == null) witherWarning = gameObject.AddComponent<UIGlobalWitherWarning>();
             witherWarning.farmPanel = farmPanel;
+
+            if (GetComponent<GlobalUiSoundHooker>() == null)
+                gameObject.AddComponent<GlobalUiSoundHooker>();
         }
 
         /// <summary>
@@ -286,6 +298,19 @@ namespace WeedHoldings
         /// <summary>서브 패널이 하나도 열려있지 않으면(=메인 로비 화면이 보이는 상태) true.</summary>
         bool IsInLobby => panels == null || panels.All(p => p == null || !p.activeSelf);
 
+        /// <summary>메인 로비 화면일 때는 뒤로가기 버튼이 실제로는 "게임 종료" 버튼으로 동작하므로,
+        /// 그 상황에 맞게 아이콘도 종료(X) 모양으로 바꿔서 눌렀을 때 무슨 일이 일어날지 미리 알려준다.</summary>
+        void RefreshBackButtonIcon()
+        {
+            if (backButtonImage == null) return;
+
+            if (cachedBackSprite == null) cachedBackSprite = Resources.Load<Sprite>("UI/Back_Button");
+            if (cachedGameEndSprite == null) cachedGameEndSprite = Resources.Load<Sprite>("UI/Game_End");
+
+            backButtonImage.sprite = IsInLobby ? cachedGameEndSprite : cachedBackSprite;
+            backButtonImage.preserveAspect = true;
+        }
+
         static void QuitGame()
         {
 #if UNITY_EDITOR
@@ -320,6 +345,7 @@ namespace WeedHoldings
 
             // Re-enable lobby buttons when all panels closed
             SetLobbyButtonsInteractable(true);
+            RefreshBackButtonIcon();
         }
 
         void ShowPanel(int index)
@@ -348,6 +374,7 @@ namespace WeedHoldings
 
             // Disable lobby buttons when any panel is open
             SetLobbyButtonsInteractable(false);
+            RefreshBackButtonIcon();
         }
 
         void SetLobbyButtonsInteractable(bool interactable)

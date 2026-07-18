@@ -45,6 +45,7 @@ namespace WeedHoldings
         {
             button = GetComponent<Button>();
             cardImage = GetComponent<Image>();
+            if (cardImage != null) cardImage.preserveAspect = true;
             iconImage = transform.Find("Char_Icon")?.GetComponent<Image>();
             if (iconImage != null) iconImage.preserveAspect = true;
 
@@ -121,7 +122,29 @@ namespace WeedHoldings
         {
             if (revealed || pendingCharacter == null) return;
             revealed = true;
+            PlayRevealSound();
             flipRoutine = StartCoroutine(FlipAndReveal());
+        }
+
+        /// <summary>R등급이거나 이미 보유한 중복 카드는 낮은 등급 연출음(Sparking_Card04), 처음 얻는
+        /// SR은 Sparking_Card05, 처음 얻는 SSR은 가장 화려한 Sparking_Card03을 재생한다.</summary>
+        void PlayRevealSound()
+        {
+            if (pendingDuplicate || pendingCharacter.grade == "R")
+            {
+                SfxManager.Play("Sparking_Card04");
+                return;
+            }
+
+            switch (pendingCharacter.grade)
+            {
+                case "SR":
+                    SfxManager.Play("Sparking_Card05");
+                    break;
+                case "SSR":
+                    SfxManager.Play("Sparking_Card03");
+                    break;
+            }
         }
 
         IEnumerator FlipAndReveal()

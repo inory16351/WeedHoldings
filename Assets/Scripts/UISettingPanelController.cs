@@ -33,7 +33,14 @@ namespace WeedHoldings
             if (settingButton == null) return;
 
             var label = settingButton.GetComponentInChildren<TMP_Text>(true);
-            if (label != null) label.text = "설정";
+            if (label != null) label.enabled = false;
+
+            var settingButtonImage = settingButton.GetComponent<Image>();
+            if (settingButtonImage != null)
+            {
+                settingButtonImage.sprite = Resources.Load<Sprite>("UI/Setting_Button");
+                settingButtonImage.preserveAspect = true;
+            }
 
             BuildResolutionOptions();
             ApplySavedSettings();

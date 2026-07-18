@@ -224,6 +224,27 @@ namespace WeedHoldings
             ConfigureAutoSize(text, min, max);
         }
 
+        static readonly Color VoyagingTextColor = new Color(1f, 0.95f, 0.6f, 1f); // 밝은 크림 옐로우
+        static readonly Color VoyagingOutlineColor = new Color(0.15f, 0.08f, 0f, 1f); // 짙은 갈색 외곽선
+
+        /// <summary>항해 중 배경(황토색 틴트) 위에서 "항해 중" 텍스트가 잘 안 보인다는 피드백이 있었다.
+        /// 밝은 크림색 + 굵게 + 짙은 외곽선을 줘서 어떤 배경 위에서도 또렷하게 읽히도록 한다.</summary>
+        static void StyleVoyagingText(TMP_Text text)
+        {
+            text.color = VoyagingTextColor;
+            text.fontStyle = FontStyles.Bold;
+            text.outlineWidth = 0.25f;
+            text.outlineColor = VoyagingOutlineColor;
+        }
+
+        /// <summary>항해 중이 아닐 때는 원래의 기본 흰색/외곽선 없는 스타일로 되돌린다.</summary>
+        static void ResetTextStyle(TMP_Text text)
+        {
+            text.color = Color.white;
+            text.fontStyle = FontStyles.Normal;
+            text.outlineWidth = 0f;
+        }
+
         /// <summary>
         /// Region_Panel/Sell_Info/Time_Panel/Sell_Panel(출항 버튼) 4개를 Top_Panel(높이 114.301) 바로
         /// 아래부터 화면 우측 절반을 꽉 채우도록 재배치한다. 전부 SellPanel(캔버스 전체 크기 1920x1080)
@@ -379,10 +400,12 @@ namespace WeedHoldings
                         int minutes = Mathf.FloorToInt(ship.remainingTime / 60f);
                         int seconds = Mathf.FloorToInt(ship.remainingTime % 60f);
                         shipTrackTexts[i].text = $"무역선 Lv.1\n항해 중... {minutes:D2}:{seconds:D2}";
+                        StyleVoyagingText(shipTrackTexts[i]);
                     }
                     else
                     {
                         shipTrackTexts[i].text = "무역선 Lv.1\n상태: 대기중";
+                        ResetTextStyle(shipTrackTexts[i]);
                     }
                 }
 
@@ -447,6 +470,8 @@ namespace WeedHoldings
             int regionId = regionIdBySlot[slotIndex];
             if (regionId <= 0) return;
             if (SellUpgradeManager.Instance != null && !SellUpgradeManager.Instance.IsRegionUnlocked(regionId)) return;
+            // 이미 다른 배가 항해 중인 목적지는 그 배가 돌아올 때까지 다시 선택할 수 없다.
+            if (TradeManager.Instance != null && TradeManager.Instance.IsRegionInVoyage(regionId)) return;
 
             // 이미 선택된 지역을 다시 누르면 선택 해제.
             selectedRegionId = (selectedRegionId == regionId) ? -1 : regionId;
@@ -463,7 +488,9 @@ namespace WeedHoldings
                 if (cg == null) cg = regionPanel.gameObject.AddComponent<CanvasGroup>();
                 cg.interactable = interactable;
                 cg.blocksRaycasts = interactable;
-                cg.alpha = interactable ? 1f : 0.5f;
+                // 배를 아직 선택하지 않아 지역을 고를 수 없는 동안에도, 화면 자체는 흐려지지 않고
+                // 항상 선명하게 보여야 한다(선택 불가는 클릭이 안 먹히는 것으로만 표시).
+                cg.alpha = 1f;
             }
             RefreshRegionButtons();
         }
@@ -476,6 +503,7 @@ namespace WeedHoldings
 
                 int regionId = regionIdBySlot[i];
                 bool unlocked = regionId > 0 && (SellUpgradeManager.Instance == null || SellUpgradeManager.Instance.IsRegionUnlocked(regionId));
+                bool voyaging = unlocked && TradeManager.Instance != null && TradeManager.Instance.IsRegionInVoyage(regionId);
 
                 // 지역명 텍스트는 사진 배경 위에서 잘 안 보이므로 제거하고, 대신 폰트를 미리 구운
                 // 라벨 이미지(Region_Label_*)를 사용한다. 잠긴 지역은 "???" 라벨 + 중앙 자물쇠 아이콘.
@@ -484,13 +512,26 @@ namespace WeedHoldings
                 EnsureLockIcon(regionRoots[i], ref regionLockIcons[i], Vector2.zero).enabled = !unlocked;
 
                 if (regionButtons[i] != null)
-                    regionButtons[i].interactable = unlocked;
+                    regionButtons[i].interactable = unlocked && !voyaging;
 
-                // 해금된 지역은 배경 사진이 항상 선명하게(흰색, 틴트 없음) 보이고, 선택 여부는 파란
-                // 테두리로만 표시한다. 잠긴 지역만 기존처럼 어둡게 틴트해서 실루엣으로 보여준다.
-                Color bg = unlocked ? Color.white : new Color(0.12f, 0.12f, 0.14f, 0.9f);
+                // Ship_Track과 동일한 규칙: 해금된 지역은 선택 여부와 무관하게 항상 밝게(흰색) 유지해
+                // 투명하게 죽어 보이지 않게 하고, 선택 표시만 파란 테두리로 한다. 다만 이미 다른 배가
+                // 향하고 있는 지역이라면 Ship_Track의 "항해 중" 상태처럼 어둡게 틴트하고 가운데에
+                // "항해 중" 텍스트를 띄워 지금은 고를 수 없는 목적지임을 알려준다.
+                Color bg = !unlocked ? new Color(0.12f, 0.12f, 0.14f, 0.9f)
+                    : (voyaging ? new Color(0.55f, 0.45f, 0.15f, 0.9f) : Color.white);
                 SetSlotColor(regionRoots[i], bg);
-                SetSlotSelectedOutline(regionRoots[i], unlocked && regionId == selectedRegionId);
+                SetSlotSelectedOutline(regionRoots[i], unlocked && !voyaging && regionId == selectedRegionId);
+
+                if (regionTexts[i] != null)
+                {
+                    regionTexts[i].enabled = voyaging;
+                    if (voyaging)
+                    {
+                        regionTexts[i].text = "항해 중";
+                        StyleVoyagingText(regionTexts[i]);
+                    }
+                }
             }
         }
 

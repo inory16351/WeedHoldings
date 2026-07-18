@@ -137,6 +137,7 @@ namespace WeedHoldings
                     bgImage.enabled = true;
                     bgImage.sprite = frame;
                     bgImage.color = Color.white;
+                    bgImage.preserveAspect = true;
                 }
             }
             if (infoText != null)

@@ -52,12 +52,16 @@ namespace WeedHoldings
                 {
                     overlay.gameObject.SetActive(false);
                     blinkTimer = 0f;
+                    SfxManager.SetLooping("Siren01", false);
                 }
                 return;
             }
 
             if (!overlay.gameObject.activeSelf)
+            {
                 overlay.gameObject.SetActive(true);
+                SfxManager.SetLooping("Siren01", true);
+            }
 
             blinkTimer += Time.deltaTime;
             float alpha = Mathf.PingPong(blinkTimer * 2f, 0.35f);

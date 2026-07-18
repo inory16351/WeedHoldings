@@ -87,6 +87,7 @@ namespace WeedHoldings
                 cardBg.enabled = true;
                 if (frame != null) cardBg.sprite = frame;
                 cardBg.color = tint;
+                cardBg.preserveAspect = true;
             }
             if (charIcon != null)
             {

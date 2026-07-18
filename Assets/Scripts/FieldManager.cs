@@ -22,11 +22,14 @@ namespace WeedHoldings
         public int timeFontSize = 16;
 
         // 재배 화면 기획(재배 화면.png): 6열 x 4행 = 24칸이 스크롤 없이 패널 안에 전부 들어와야 한다.
-        // Field_Panel 실제 크기(≈997.7 x 656.4)에 맞춰 칸 크기/간격을 역산했다.
+        // Field_Panel의 배경이 나무/집/해바라기 등 장식이 테두리를 둘러싼 그림(Field_Panel.png)으로
+        // 바뀌면서, 장식을 피한 가운데 "빈 잔디" 영역에 맞춰 칸 크기/간격을 계산했다. 왼쪽에 여백이
+        // 많이 남는다는 피드백을 받아 픽셀 단위로 잔디 영역을 다시 측정해 칸을 더 키우고 간격도
+        // 조금 더 넉넉하게 늘렸다(GameAssetSetupTool Wave11에서 패널 자체 크기/여백도 같이 재계산됨).
         public const int GridColumns = 6;
         const int GridRows = 4;
-        static readonly Vector2 CellSize = new Vector2(150f, 145f);
-        static readonly Vector2 CellSpacing = new Vector2(12f, 12f);
+        static readonly Vector2 CellSize = new Vector2(105f, 103f);
+        static readonly Vector2 CellSpacing = new Vector2(8f, 8f);
 
         // 밭 칸 구매 가격 공식: 1200G + 이미 구매한 칸 수 x 2000G (전체 경제 재조정에 맞춰 기존 대비 4배)
         const int FieldUnlockBaseCost = 1200;
@@ -56,7 +59,10 @@ namespace WeedHoldings
             var grid = gameObject.AddComponent<GridLayoutGroup>();
             grid.cellSize = CellSize;
             grid.spacing = CellSpacing;
-            grid.padding = new RectOffset(10, 10, 10, 10);
+            // 24칸 격자가 새 배경 그림의 나무/집/해바라기 장식을 피한 가운데 빈 잔디 영역에 오도록
+            // 여백을 그 영역 경계에 맞춰 계산해뒀다(GameAssetSetupTool Wave11에서 Field_Panel 자체
+            // 크기도 이 배치에 맞게 함께 조정됨).
+            grid.padding = new RectOffset(186, 221, 160, 139);
             grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
             grid.startAxis = GridLayoutGroup.Axis.Horizontal;
             grid.childAlignment = TextAnchor.UpperLeft;

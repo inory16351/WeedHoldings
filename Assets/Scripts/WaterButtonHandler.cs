@@ -104,6 +104,7 @@ namespace WeedHoldings
                 }
             }
 
+            if (wateredCount > 0) SfxManager.Play("Water_Splash02");
             Debug.Log($"[WaterButton] {wateredCount}개 밭에 물주기 완료 (쿨타임: {cooldownTime}초)");
         }
 

@@ -71,11 +71,16 @@ namespace WeedHoldings
             if (!LabUpgradeManager.Instance.IsHarvestGroupUnlocked(selected.harvestGroupID)) return;
 
             // 아무것도 심기지 않은 밭 전체에 선택된 식물을 심는다 (해금 안 된 밭은 제외).
+            bool plantedAny = false;
             foreach (var plot in CultivationManager.Instance.GetAllPlots())
             {
                 if (plot != null && plot.IsUnlocked && plot.GrowthState == GrowthState.Empty)
+                {
                     plot.PlantPlant(selected);
+                    plantedAny = true;
+                }
             }
+            if (plantedAny) SfxManager.Play("Planting");
         }
 
         void OnAllHarvestClicked()
@@ -84,12 +89,17 @@ namespace WeedHoldings
 
             // 밭 전체가 수확 가능 상태가 될 때까지 기다리지 않고, 지금 수확 가능한 밭만 골라 전부 수확한다.
             // 단, 심긴 식물의 harvestGroupID가 아직 해금 안 됐으면 이 밭은 건너뛴다.
+            bool harvestedAny = false;
             foreach (var plot in CultivationManager.Instance.GetAllPlots())
             {
                 if (plot != null && plot.GrowthState == GrowthState.ReadyToHarvest && plot.plantedPlant != null
                     && LabUpgradeManager.Instance.IsHarvestGroupUnlocked(plot.plantedPlant.harvestGroupID))
+                {
                     plot.Harvest();
+                    harvestedAny = true;
+                }
             }
+            if (harvestedAny) SfxManager.Play("Planting");
         }
     }
 }

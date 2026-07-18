@@ -81,6 +81,18 @@ namespace WeedHoldings
             return (ships != null && index >= 0 && index < ships.Length) ? ships[index] : null;
         }
 
+        /// <summary>이미 항해 중인 배가 향하고 있는 지역이면 true. 같은 목적지로 동시에 두 번째
+        /// 배를 또 출항시킬 수 없게 막는 데 쓴다.</summary>
+        public bool IsRegionInVoyage(int regionId)
+        {
+            if (ships == null || regionId <= 0) return false;
+            foreach (var ship in ships)
+            {
+                if (ship.state == ShipState.Voyaging && ship.regionId == regionId) return true;
+            }
+            return false;
+        }
+
         /// <summary>선택한 지역/식물 보너스가 반영된 포션 1개당 예상 판매가.</summary>
         public float GetEffectiveSellPrice(int potionId, int regionId)
         {
@@ -154,6 +166,7 @@ namespace WeedHoldings
             ship.remainingTime = voyageTime;
             ship.rewardGold = totalGold;
 
+            SfxManager.Play("Horn02");
             Debug.Log($"[TradeManager] 선박{shipIndex + 1} {region.regionName}(으)로 출항 ({voyageTime:F0}초, 예상 {totalGold:N0}G)");
             OnShipsChanged?.Invoke();
             return true;

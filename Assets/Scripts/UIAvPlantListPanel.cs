@@ -119,6 +119,9 @@ namespace WeedHoldings
                 PlantSelectionManager.Instance.SelectPlant(plant);
                 selectedIndex = index;
                 ApplySelection();
+                // 전역 버튼 사운드 훅이 리스트가 새로고침되며 자식 오브젝트가 새로 만들어지는 타이밍을
+                // 놓칠 수 있어, 식물 선택은 여기서 직접 확실하게 재생한다.
+                SfxManager.Play("Select_Sound");
             }
         }
 

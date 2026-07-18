@@ -63,7 +63,10 @@ namespace WeedHoldings
         {
             if (SellUpgradeManager.Instance == null) return;
             if (SellUpgradeManager.Instance.TryUpgrade())
+            {
+                SfxManager.Play("Factory01");
                 RefreshDisplay();
+            }
         }
 
         void RefreshDisplay()

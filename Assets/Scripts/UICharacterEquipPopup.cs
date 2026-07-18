@@ -315,7 +315,11 @@ namespace WeedHoldings
             {
                 var frame = CharacterEquipManager.GetFrame(character.grade);
                 infoBg.enabled = frame != null;
-                if (frame != null) infoBg.sprite = frame;
+                if (frame != null)
+                {
+                    infoBg.sprite = frame;
+                    infoBg.preserveAspect = true;
+                }
             }
             if (infoRating != null)
             {

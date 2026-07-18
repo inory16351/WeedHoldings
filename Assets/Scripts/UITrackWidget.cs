@@ -18,7 +18,25 @@ namespace WeedHoldings
         TMP_Text timeText;
         Button craftingButton;
         TMP_Text craftingButtonText;
+        Image craftingButtonImage;
         Image lockIcon;
+
+        static Sprite cachedLockedSprite, cachedProgressSprite, cachedSuccessSprite, cachedFailSprite2;
+
+        /// <summary>제조 트랙 버튼(Crafting)은 상태(잠김/제작 중/완료/실패)마다 문구가 바뀌는데,
+        /// 예전에는 그때그때 TMP 텍스트를 갈아 끼웠다. 다른 버튼들처럼 폰트가 미리 구워진 이미지로
+        /// 바꾸면서 텍스트 대신 상태별 이미지를 스와핑하는 방식으로 통일한다.</summary>
+        static Sprite ResolveCraftSprite(string state)
+        {
+            return state switch
+            {
+                "Locked" => cachedLockedSprite ??= Resources.Load<Sprite>("UI/Craft_Locked"),
+                "Progress" => cachedProgressSprite ??= Resources.Load<Sprite>("UI/Craft_Progress"),
+                "Success" => cachedSuccessSprite ??= Resources.Load<Sprite>("UI/Craft_Success"),
+                "Fail" => cachedFailSprite2 ??= Resources.Load<Sprite>("UI/Craft_Fail"),
+                _ => null,
+            };
+        }
 
         static Sprite cachedFailSprite;
 
@@ -76,6 +94,9 @@ namespace WeedHoldings
             var craftingObj = transform.Find("Crafting");
             craftingButton = craftingObj?.GetComponent<Button>();
             craftingButtonText = craftingObj?.GetComponentInChildren<TMP_Text>();
+            craftingButtonImage = craftingObj?.GetComponent<Image>();
+            if (craftingButtonText != null) craftingButtonText.enabled = false;
+            if (craftingButtonImage != null) craftingButtonImage.preserveAspect = true;
 
             // BG가 맨 마지막 자식(=가장 위에 렌더링)으로 되어 있어 Potion_Crafting을 가리는 문제 방지.
             var bg = transform.Find("BG");
@@ -87,7 +108,6 @@ namespace WeedHoldings
             UIScrollListFactory.ApplyNotoSansFont(this);
             ConfigureAutoSize(potionNameText, 10f, 16f);
             ConfigureAutoSize(timeText, 9f, 14f);
-            ConfigureAutoSize(craftingButtonText, 10f, 16f);
         }
 
         static void ConfigureAutoSize(TMP_Text text, float min, float max)
@@ -115,7 +135,7 @@ namespace WeedHoldings
                 if (potionNameText != null) potionNameText.text = "잠김";
                 if (timeText != null) timeText.text = "";
                 if (craftingButton != null) craftingButton.interactable = false;
-                if (craftingButtonText != null) craftingButtonText.text = "잠김";
+                SetCraftingButtonSprite("Locked");
                 return;
             }
             if (lockIcon != null) lockIcon.enabled = false;
@@ -126,7 +146,7 @@ namespace WeedHoldings
                 if (potionNameText != null) potionNameText.text = "대기 중";
                 if (timeText != null) timeText.text = "";
                 if (craftingButton != null) craftingButton.interactable = false;
-                if (craftingButtonText != null) craftingButtonText.text = "";
+                SetCraftingButtonSprite(null); // 대기 중에는 누를 것이 없으므로 버튼 이미지도 비운다.
                 return;
             }
 
@@ -139,7 +159,7 @@ namespace WeedHoldings
                 if (potionNameText != null) potionNameText.text = track.potion != null ? track.potion.potionName : "";
                 if (timeText != null) timeText.text = "제작 실패....";
                 if (craftingButton != null) craftingButton.interactable = true;
-                if (craftingButtonText != null) craftingButtonText.text = "비우기";
+                SetCraftingButtonSprite("Fail");
                 return;
             }
 
@@ -154,13 +174,13 @@ namespace WeedHoldings
                 int seconds = Mathf.FloorToInt(track.remainingTime % 60f);
                 if (timeText != null) timeText.text = $"제작 중... {minutes:D2}:{seconds:D2}";
                 if (craftingButton != null) craftingButton.interactable = false;
-                if (craftingButtonText != null) craftingButtonText.text = "제작 중";
+                SetCraftingButtonSprite("Progress");
             }
             else if (track.state == TrackState.ReadyToCollect)
             {
                 if (timeText != null) timeText.text = "완성! 00:00";
                 if (craftingButton != null) craftingButton.interactable = true;
-                if (craftingButtonText != null) craftingButtonText.text = "제작성공!";
+                SetCraftingButtonSprite("Success");
             }
         }
 
@@ -168,6 +188,14 @@ namespace WeedHoldings
         {
             if (potionIcon != null) potionIcon.enabled = visible;
             if (potionCrafting != null) potionCrafting.enabled = visible;
+        }
+
+        void SetCraftingButtonSprite(string state)
+        {
+            if (craftingButtonImage == null) return;
+            var sprite = state != null ? ResolveCraftSprite(state) : null;
+            craftingButtonImage.sprite = sprite;
+            craftingButtonImage.enabled = sprite != null;
         }
 
         void OnCraftingButtonClicked()

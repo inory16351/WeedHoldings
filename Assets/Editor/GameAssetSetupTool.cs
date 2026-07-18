@@ -650,6 +650,22 @@ namespace WeedHoldings.EditorTools
             Succeed();
         }
 
+        static readonly string[] NewUiResourceSprites =
+        {
+            "Back_Button", "Game_End", "Craft_Locked", "Craft_Progress", "Craft_Success", "Craft_Fail", "Setting_Button",
+        };
+
+        [MenuItem("Tools/게임 에셋 일괄 설정/뒤로가기+제조트랙+설정 버튼 이미지 스프라이트로 가져오기")]
+        public static void ImportNewUiResourceSprites()
+        {
+            foreach (var name in NewUiResourceSprites)
+                ForceSpriteImport("Assets/Resources/UI/" + name + ".png");
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log($"[GameAssetSetupTool] 새 UI 리소스 스프라이트 가져오기 완료: {NewUiResourceSprites.Length}개.");
+            Succeed();
+        }
+
         /// <summary>상단바의 빈 "Setting" 버튼에 해상도/사운드 팝업 로직(UISettingPanelController)을
         /// 연결한다. 팝업 UI 자체는 그 스크립트가 런타임에 직접 생성하므로 씬에는 컴포넌트만 붙이면 된다.</summary>
         static bool EnsureSettingPanelController(GameObject canvasGO)
@@ -861,6 +877,322 @@ namespace WeedHoldings.EditorTools
                 count++;
             }
             return count;
+        }
+
+        // =====================================================================================
+        // Wave 7: 상단바 네비게이션 퀵이동 버튼 6개를 비율 유지한 채 25% 확대.
+        // =====================================================================================
+
+        [MenuItem("Tools/게임 에셋 일괄 설정/7차 - 상단바 네비 버튼 25% 확대")]
+        public static void SetupWave7()
+        {
+            try
+            {
+                var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+                var canvasGO = GameObject.Find("Canvas");
+                if (canvasGO == null) throw new Exception("Canvas를 찾지 못함");
+                Transform canvas = canvasGO.transform;
+
+                int resized = ResizeNavButtons(canvas);
+
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+
+                Debug.Log($"[GameAssetSetupTool] Wave7 완료: 네비 버튼 25% 확대 {resized}/6.");
+                Succeed();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[GameAssetSetupTool] Wave7 예외: " + e);
+                Fail();
+            }
+        }
+
+        const float NavButtonScale = 1.25f;
+
+        /// <summary>네비 버튼 6개는 전부 같은 크기(140x68)로 170px 간격을 두고 왼쪽부터 나란히 배치돼
+        /// 있다. 첫 버튼의 왼쪽 끝(로컬 x=30)을 기준점으로 삼아 위치/크기를 함께 1.25배 하면, 버튼
+        /// 사이 간격까지 통째로 커져서 비율이 그대로 유지된 채 25% 확대된 것처럼 보인다.</summary>
+        static int ResizeNavButtons(Transform canvas)
+        {
+            const float pivotX = 30f; // 원래 Farm_Nav_Button 좌측 끝(center 100 - half-width 70)
+
+            int applied = 0;
+            foreach (var (name, _) in NavButtonTargets)
+            {
+                var target = FindRecursive(canvas, name);
+                var rect = target as RectTransform;
+                if (rect == null) continue;
+
+                var pos = rect.anchoredPosition;
+                var size = rect.sizeDelta;
+
+                pos.x = pivotX + (pos.x - pivotX) * NavButtonScale;
+                size *= NavButtonScale;
+
+                rect.anchoredPosition = pos;
+                rect.sizeDelta = size;
+                EditorUtility.SetDirty(rect);
+                applied++;
+            }
+            return applied;
+        }
+
+        // =====================================================================================
+        // Wave 8: 커스텀 배경 없이 유니티 기본 Background 스프라이트(알파 0.392)만 걸려있어 흐릿하게
+        //         비쳐 보이던 하위 패널들을 불투명한 회색 톤으로 바꿔 가독성을 높인다.
+        // =====================================================================================
+
+        static readonly string[] TransparentPanelPaths =
+        {
+            "SellPanel/Ship_Track",
+            "SellPanel/Region_Panel",
+            "SellPanel/Sell_Info",
+            "SellPanel/Time_Panel",
+            "SellPanel/Inventory_Slot",
+            "SellPanel/Sell_Panel", // 출항하기 버튼이 있는 하위 패널(최상위 SellPanel과 이름이 겹침)
+            "PotionPanel/Track_Panel", // Wave9에서 SellPanel -> PotionPanel로 이동 정정됨
+            "PotionPanel/Factory_Panel",
+            "PotionPanel/Factory_Panel/Inventory_Plant",
+            "PotionPanel/Factory_Panel/Potion_List_Panel",
+            "PotionPanel/Factory_Panel/Potion_Info",
+            "LaboratoryPanel/Upgrade/Farm_Upgrade_Panel",
+            "LaboratoryPanel/Upgrade/Factory_Upgrade_Panel",
+            "LaboratoryPanel/Upgrade/Sell_Upgrade_Panel",
+            "LaboratoryPanel/Potion_Unlock/Potion_Unlock_List",
+            "LaboratoryPanel/Plant_Unlock/Plant_Unlock_List",
+            "CharactorPanel/Farm",
+            "CharactorPanel/Factory",
+            "CharactorPanel/Sell",
+            // 열(Farm/Factory/Sell) 배경만으로는 그 위에 캐릭터 장착 칸(Charactor_01~03) 각자의
+            // 기본 반투명 배경이 덮고 있어서 회색이 잘 안 보였다 - 칸 하나하나도 같이 칠한다.
+            "CharactorPanel/Farm/Charactor_01",
+            "CharactorPanel/Farm/Charactor_02",
+            "CharactorPanel/Farm/Charactor_03",
+            "CharactorPanel/Factory/Charactor_01",
+            "CharactorPanel/Factory/Charactor_02",
+            "CharactorPanel/Factory/Charactor_03",
+            "CharactorPanel/Sell/Charactor_01",
+            "CharactorPanel/Sell/Charactor_02",
+            "CharactorPanel/Sell/Charactor_03",
+            "CharactorPanel/Char_equip/Inventory",
+            "CharactorPanel/Char_equip/Char_Info",
+        };
+
+        static readonly Color PanelGray = new Color(0.2f, 0.2f, 0.22f, 0.92f);
+
+        [MenuItem("Tools/게임 에셋 일괄 설정/8차 - 투명 패널 회색으로 정리")]
+        public static void SetupWave8()
+        {
+            try
+            {
+                var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+                var canvasGO = GameObject.Find("Canvas");
+                if (canvasGO == null) throw new Exception("Canvas를 찾지 못함");
+                Transform canvas = canvasGO.transform;
+
+                int applied = 0;
+                foreach (var path in TransparentPanelPaths)
+                {
+                    var target = canvas.Find(path);
+                    var image = target != null ? target.GetComponent<Image>() : null;
+                    if (image == null)
+                    {
+                        Debug.LogWarning($"[GameAssetSetupTool] 패널을 못 찾음: Canvas/{path}");
+                        continue;
+                    }
+                    image.color = PanelGray;
+                    EditorUtility.SetDirty(image);
+                    applied++;
+                }
+
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+
+                Debug.Log($"[GameAssetSetupTool] Wave8 완료: 투명 패널 회색 적용 {applied}/{TransparentPanelPaths.Length}.");
+                Succeed();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[GameAssetSetupTool] Wave8 예외: " + e);
+                Fail();
+            }
+        }
+
+        // =====================================================================================
+        // Wave 9: 잘못 SellPanel 밑에 있던 Track_Panel(제조 트랙 6개)을 원래 있어야 할 PotionPanel
+        //         밑으로 옮긴다. UILobbyNavigation.SetupFactoryWidgets()가 potionPanel.transform.Find
+        //         ("Track_Panel")로 찾기 때문에, 지금 위치에서는 제조 트랙 위젯이 아예 연결되지 않는다.
+        // =====================================================================================
+
+        [MenuItem("Tools/게임 에셋 일괄 설정/9차 - Track_Panel을 PotionPanel 밑으로 이동")]
+        public static void SetupWave9()
+        {
+            try
+            {
+                var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+                var canvasGO = GameObject.Find("Canvas");
+                if (canvasGO == null) throw new Exception("Canvas를 찾지 못함");
+                Transform canvas = canvasGO.transform;
+
+                var trackPanel = canvas.Find("SellPanel/Track_Panel");
+                var potionPanel = canvas.Find("PotionPanel");
+                if (trackPanel == null) throw new Exception("SellPanel/Track_Panel을 찾지 못함(이미 옮겨졌을 수 있음)");
+                if (potionPanel == null) throw new Exception("PotionPanel을 찾지 못함");
+
+                trackPanel.SetParent(potionPanel, false);
+                EditorUtility.SetDirty(trackPanel.gameObject);
+                EditorUtility.SetDirty(potionPanel.gameObject);
+
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+
+                Debug.Log("[GameAssetSetupTool] Wave9 완료: Track_Panel을 PotionPanel 밑으로 이동함.");
+                Succeed();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[GameAssetSetupTool] Wave9 예외: " + e);
+                Fail();
+            }
+        }
+
+        static readonly string[] CharacterCardFiles =
+        {
+            "card_back", "r_card", "r_card2", "sr_card", "sr_card2", "ssr_card", "ssr_card2",
+        };
+
+        /// <summary>사용자가 투명 여백을 잘라 다시 넣어준 카드 프레임 이미지들을 다시 임포트한다.
+        /// 크기가 파일마다 달라졌으므로(예: sr_card 200x293, ssr_card2 376x443) 이걸 쓰는 모든
+        /// Image는 preserveAspect=true가 돼 있어야 비율이 안 깨진다(스크립트 쪽에서 이미 처리).</summary>
+        [MenuItem("Tools/게임 에셋 일괄 설정/캐릭터 카드 이미지 다시 가져오기")]
+        public static void ImportCharacterCardSprites()
+        {
+            foreach (var name in CharacterCardFiles)
+                ForceSpriteImport("Assets/Resources/Cards/" + name + ".png");
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log($"[GameAssetSetupTool] 캐릭터 카드 이미지 재가져오기 완료: {CharacterCardFiles.Length}개.");
+            Succeed();
+        }
+
+        // =====================================================================================
+        // Wave 10: 네비 버튼 6개가 25% 확대 후 마지막(뽑기) 버튼이 Gold_Panel과 겹쳐서, 가로는
+        //          줄이고 세로는 늘린 비율로 다시 배치한다.
+        // =====================================================================================
+
+        // 세로로 좀 더 긴 비율(160x95, 기존 140x68 대비 폭은 좁고 높이는 큼)로 간격 24px씩 나란히.
+        // NavButtonsContainer 로컬 기준 첫 버튼 중심 x=110(왼쪽 끝 30에서 반너비 80만큼 안쪽).
+        static readonly (string name, float centerX)[] NavButtonLayoutV2 =
+        {
+            ("Farm_Nav_Button", 110f),
+            ("Potion_Nav_Button", 294f),
+            ("Sell_Nav_Button", 478f),
+            ("Lab_Nav_Button", 662f),
+            ("Char_Nav_Button", 846f),
+            ("Gacha_Nav_Button", 1030f),
+        };
+        static readonly Vector2 NavButtonSizeV2 = new Vector2(160f, 95f);
+
+        [MenuItem("Tools/게임 에셋 일괄 설정/10차 - 네비 버튼 세로 비율로 재조정(골드패널 안 가림)")]
+        public static void SetupWave10()
+        {
+            try
+            {
+                var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+                var canvasGO = GameObject.Find("Canvas");
+                if (canvasGO == null) throw new Exception("Canvas를 찾지 못함");
+                Transform canvas = canvasGO.transform;
+
+                int applied = 0;
+                foreach (var (name, centerX) in NavButtonLayoutV2)
+                {
+                    var target = FindRecursive(canvas, name);
+                    var rect = target as RectTransform;
+                    if (rect == null) continue;
+
+                    var pos = rect.anchoredPosition;
+                    pos.x = centerX;
+                    rect.anchoredPosition = pos;
+                    rect.sizeDelta = NavButtonSizeV2;
+                    EditorUtility.SetDirty(rect);
+                    applied++;
+                }
+
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+
+                Debug.Log($"[GameAssetSetupTool] Wave10 완료: 네비 버튼 재배치 {applied}/6.");
+                Succeed();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[GameAssetSetupTool] Wave10 예외: " + e);
+                Fail();
+            }
+        }
+
+        // =====================================================================================
+        // Wave 11: 밭 그리드 전체가 앉는 컨테이너(Field_Panel) 자체의 배경을 교체한다. 사용자가
+        //          직접 프로젝트에 넣어준 Field_Panel.png(558x447, 나무/집/해바라기 장식이 테두리를
+        //          둘러싼 그림)을 쓴다. Top_Panel(상단바)에 가리거나 위쪽이 잘리지 않도록 패널을
+        //          Top_Panel 아래 가시 영역 안에 온전히 들어오는 최대 크기로 배치한다.
+        // =====================================================================================
+
+        [MenuItem("Tools/게임 에셋 일괄 설정/11차 - 밭 패널 컨테이너 배경 교체")]
+        public static void SetupWave11()
+        {
+            try
+            {
+                const string bgPath = BackgroundsDir + "/Field_Panel.png";
+                ForceSpriteImport(bgPath);
+
+                var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+                var canvasGO = GameObject.Find("Canvas");
+                if (canvasGO == null) throw new Exception("Canvas를 찾지 못함");
+                Transform canvas = canvasGO.transform;
+
+                var fieldPanel = canvas.Find("FarmPanel/Field_Panel") ?? FindRecursive(canvas, "Field_Panel");
+                var image = fieldPanel != null ? fieldPanel.GetComponent<Image>() : null;
+                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(bgPath);
+                bool applied = false;
+                if (image != null && sprite != null)
+                {
+                    image.sprite = sprite;
+                    image.color = Color.white;
+                    image.type = Image.Type.Simple;
+                    image.preserveAspect = false;
+                    EditorUtility.SetDirty(image);
+                    applied = true;
+                }
+
+                // 아래쪽/왼쪽 모서리는 이웃 버튼/식물 리스트와 거의 맞닿아 있어 고정하고, 위쪽은
+                // Top_Panel(상단바) 바로 아래까지, 오른쪽은 식물 선택 리스트 앞까지 최대한 키운다.
+                // 24칸 격자는 이 그림의 장식(나무/집/해바라기 등)을 피한 가운데 빈 잔디 영역에
+                // 맞춰 훨씬 작은 칸 크기(FieldManager.CellSize)로 다시 배치된다.
+                bool resized = false;
+                var fieldRect = fieldPanel as RectTransform;
+                if (fieldRect != null)
+                {
+                    fieldRect.anchoredPosition = new Vector2(-307.6f, 57.33f);
+                    fieldRect.sizeDelta = new Vector2(-843f, -345f);
+                    EditorUtility.SetDirty(fieldRect);
+                    resized = true;
+                }
+
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+
+                Debug.Log($"[GameAssetSetupTool] Wave11 완료: Field_Panel 배경 교체 {applied}, 크기 재조정 {resized}.");
+                Succeed();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[GameAssetSetupTool] Wave11 예외: " + e);
+                Fail();
+            }
         }
     }
 }

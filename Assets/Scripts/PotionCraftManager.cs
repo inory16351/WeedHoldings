@@ -72,6 +72,7 @@ namespace WeedHoldings
             if (track.succeeded)
             {
                 track.state = TrackState.ReadyToCollect;
+                SfxManager.Play("Factory01");
                 Debug.Log($"[PotionCraftManager] 트랙{track.trackIndex + 1} 제조 성공: {track.potion.potionName} (실패확률 {failProb:F1}%, roll {roll:F1})");
             }
             else
@@ -128,6 +129,7 @@ namespace WeedHoldings
             track.remainingTime = actualTime;
             track.succeeded = false;
 
+            SfxManager.Play("Lab");
             Debug.Log($"[PotionCraftManager] 트랙{trackIndex + 1}에서 {potion.potionName} 제조 시작 ({actualTime:F1}초)");
             OnTracksChanged?.Invoke();
             return true;
