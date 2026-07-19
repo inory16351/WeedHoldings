@@ -237,10 +237,13 @@ namespace WeedHoldings
             text.outlineColor = VoyagingOutlineColor;
         }
 
-        /// <summary>항해 중이 아닐 때는 원래의 기본 흰색/외곽선 없는 스타일로 되돌린다.</summary>
+        static readonly Color IdleTextColor = new Color(0.08f, 0.08f, 0.1f, 1f); // 거의 검정
+
+        /// <summary>항해 중이 아닐 때(대기중) Ship_Track 배경은 항상 흰색이라, 예전처럼 흰 글씨를
+        /// 쓰면 배경과 겹쳐 글씨가 아예 안 보였다. 짙은(거의 검정) 색으로 바꿔 대비를 준다.</summary>
         static void ResetTextStyle(TMP_Text text)
         {
-            text.color = Color.white;
+            text.color = IdleTextColor;
             text.fontStyle = FontStyles.Normal;
             text.outlineWidth = 0f;
         }
@@ -379,6 +382,10 @@ namespace WeedHoldings
                         shipTrackTexts[i].text = "잠김";
                         // 자물쇠 아이콘이 슬롯 정중앙에 오므로, "잠김" 글자는 그 아래로 내려서 겹치지 않게 한다.
                         shipTrackTexts[i].margin = new Vector4(0f, 130f, 0f, 0f);
+                        // 잠금 배경은 어두운 색이라 밝은 흰 글씨로 고정해 대비를 준다.
+                        shipTrackTexts[i].color = Color.white;
+                        shipTrackTexts[i].fontStyle = FontStyles.Normal;
+                        shipTrackTexts[i].outlineWidth = 0f;
                     }
                     if (shipTrackButtons[i] != null) shipTrackButtons[i].interactable = false;
                     SetSlotColor(shipTrackRoots[i], new Color(0.12f, 0.12f, 0.14f, 0.9f));

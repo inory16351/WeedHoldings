@@ -142,7 +142,12 @@ namespace WeedHoldings
             pendingPlot = plot;
             if (priceText != null) priceText.text = $"{cost:N0}G";
             dialogRoot.SetActive(true);
-            transform.SetAsLastSibling();
+            // 이 컴포넌트는 FarmPanel 자신에 붙어있어서(UILobbyNavigation.SetupLabWidgets 참고) "transform"이
+            // 곧 FarmPanel의 트랜스폼이다. 예전엔 여기서 SetAsLastSibling()을 호출해서 FarmPanel 자신이
+            // Canvas의 형제들(Top_Panel 포함) 맨 뒤로 옮겨져 상단바가 가려져 버렸다. 팝업을 다른 요소들
+            // 위로 띄우려던 의도였으므로, FarmPanel이 아니라 팝업 자신(dialogRoot, FarmPanel의 자식)만
+            // FarmPanel 안에서 맨 위로 옮긴다.
+            dialogRoot.transform.SetAsLastSibling();
         }
 
         void Hide()
